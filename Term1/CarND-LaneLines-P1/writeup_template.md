@@ -1,13 +1,9 @@
-#** Finding Lane Lines on the Road**
+# Finding Lane Lines on the Road
 
 The goals / steps of this project are the following:
 * Make a pipeline that finds lane lines on the road
 * Reflect on your work in a written report
 
-
-[//]: # (Image References)
-
-[image1]: ./examples/grayscale.jpg "Grayscale"
 
 ---
 
@@ -35,8 +31,10 @@ In order to draw a single line on the left and right lanes, I modified the `draw
 
 If you'd like to include images to show how the pipeline works, here is how to include an image:
 
-![alt text] (test_images_output/solidWhiteCurve.jpg) "Solid White Curves"
-
+![Solid White Curves](test_images_output/solidWhiteCurve.jpg)
+![Gray scale](test_images_output/solidWhiteCurveGray.jpg)
+![Canny](test_images_output/solidWhiteCurveCanny.jpg)
+![Hough Transform](test_images_output/solidWhiteCurveHough.jpg)
 
 ### 2. Identify potential shortcomings with your current pipeline
 
