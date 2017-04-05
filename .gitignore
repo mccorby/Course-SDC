@@ -3,3 +3,8 @@
 */CarND-Term1-Starter-Kit
 .ipynb_checkpoints
 .idea
+*.index
+*.meta
+*.ckpt*
+*.data-*
+checkpoint
