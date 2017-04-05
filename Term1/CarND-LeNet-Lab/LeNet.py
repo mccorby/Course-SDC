@@ -67,7 +67,7 @@ def preprocess():
     pass
 
 
-def build_blocks(input_data):
+def build_architecture(input_data):
     """
 
     :return:
@@ -93,3 +93,11 @@ def build_blocks(input_data):
     final_output = b2
 
     return final_output
+
+
+def pipeline(x, labels, learning_rate):
+
+    logits = build_architecture(x)
+    loss_operation = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    
