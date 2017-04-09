@@ -215,7 +215,7 @@ import cv2
 
 
 def normalize_data(data):
-    return (data - 128.) / 128.
+    return (data - 128.) / 255.
 
 
 def convert_gray(data):
@@ -228,7 +228,7 @@ def convert_gray(data):
 
 def rotate_image(img):
     num_rows, num_cols = img.shape[:2]
-    grades = random.randint(1, 10)
+    grades = random.randint(-10, 10)
     rotation_matrix = cv2.getRotationMatrix2D((num_cols / 2, num_rows / 2), grades, 1)
     return cv2.warpAffine(img, rotation_matrix, (num_cols, num_rows))
 
@@ -250,17 +250,30 @@ def apply_denoising(img):
     pass
 
 
+def apply_histogram_eq(data):
+    """
+    http://docs.opencv.org/3.1.0/d5/daf/tutorial_py_histogram_equalization.html
+    :param data:
+    :return:
+    """
+    converted = []
+    for row in data:
+        converted.append(cv2.equalizeHist(row))
+    return np.array(converted)
+
 X_train = convert_gray(X_train)
+X_train = apply_histogram_eq(X_train)
 X_train = X_train[Ellipsis, np.newaxis]
+X_train = normalize_data(X_train)
 
 X_valid = convert_gray(X_valid)
+X_valid = apply_histogram_eq(X_valid)
 X_valid = X_valid[Ellipsis, np.newaxis]
-
-X_train = normalize_data(X_train)
 X_valid = normalize_data(X_valid)
 
 # X_test must be converted and normalized too
 X_test = convert_gray(X_test)
+X_test = apply_histogram_eq(X_test)
 X_test = X_test[Ellipsis, np.newaxis]
 X_test = normalize_data(X_test)
 
@@ -286,7 +299,7 @@ import math
 
 
 def augment_class(mean, class_count):
-    print('{} {} {}'.format('Augmenting class', class_count[0], math.ceil(mean - class_count[1])))
+    # print('{} {} {}'.format('Augmenting class', class_count[0], math.ceil(mean - class_count[1])))
     image = X_train[class_count[0]]
     for i in range(0, math.ceil(mean - class_count[1])):
         rotated_image = rotate_image(image)
@@ -311,15 +324,20 @@ low_values = count_per_class[idx]
 [augment_class(mean, x) for x in zip(idx, low_values)]
 
 X_train_augmented = np.array(X_train_augmented)[Ellipsis, np.newaxis]
-# X_train = np.append(X_train, X_train_augmented, axis=0)
-# y_train = np.append(y_train, y_train_augmented, axis=0)
+X_train = np.append(X_train, X_train_augmented, axis=0)
+y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
 
-print(X_train.shape)
-print(y_train.shape)
 
 new_n_classes = np.unique(y_train).size
 plt.hist(y_train, new_n_classes)
-plt.show()
+# plt.show()
+
+# NOTE Doubling the number of samples?
+# X_train = np.append(X_train, rotate_dataset(X_train)[Ellipsis, np.newaxis], axis=0)
+# y_train = np.append(y_train, y_train, axis=0)
+
+print(X_train.shape)
+print(y_train.shape)
 
 # ### Model Architecture
 
@@ -437,7 +455,7 @@ def evaluate(X_data, y_data):
 
 from sklearn.utils import shuffle
 
-EPOCHS = 10
+EPOCHS = 15
 BATCH_SIZE = 128
 
 # In[ ]:
