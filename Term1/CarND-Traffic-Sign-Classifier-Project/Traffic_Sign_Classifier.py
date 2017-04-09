@@ -228,12 +228,17 @@ def convert_gray(data):
 
 def rotate_image(img):
     num_rows, num_cols = img.shape[:2]
-
-    rotation_matrix = cv2.getRotationMatrix2D((num_cols / 2, num_rows / 2), 10, 1)
+    grades = random.randint(1, 10)
+    rotation_matrix = cv2.getRotationMatrix2D((num_cols / 2, num_rows / 2), grades, 1)
     return cv2.warpAffine(img, rotation_matrix, (num_cols, num_rows))
 
 
 def rotate_dataset(data):
+    """
+    Only adds rotation to those images under represented in the dataset
+    :param data: the current dataset
+    :return: an array of images rotated
+    """
     converted = []
     for row in data:
         converted.append(rotate_image(row))
@@ -259,24 +264,62 @@ X_test = convert_gray(X_test)
 X_test = X_test[Ellipsis, np.newaxis]
 X_test = normalize_data(X_test)
 
-image, index = get_random_image(X_train)
-print('{}: {}'.format('Index', y_train[index]))
-show_random_image(image, 'gray')
 
-image = rotate_image(image)
-show_random_image(image)
+def visualize_preprocessed_data():
+    global image, index
+    image, index = get_random_image(X_train)
+    print('{}: {}'.format('Index', y_train[index]))
+    show_random_image(image, 'gray')
+    image = rotate_image(image)
+    show_random_image(image)
+
+
+# visualize_preprocessed_data()
 
 # In[ ]:
 
 # Extend the dataset
-rotated = rotate_dataset(X_train)
-rotated = rotated[Ellipsis, np.newaxis]
-print('{}/{}'.format(X_train.shape, rotated.shape))
-X_train = np.append(X_train, rotated, axis=0)
-y_train = np.append(y_train, y_train, axis=0)
+X_train_augmented = []
+y_train_augmented = []
+
+import math
+
+
+def augment_class(mean, class_count):
+    print('{} {} {}'.format('Augmenting class', class_count[0], math.ceil(mean - class_count[1])))
+    image = X_train[class_count[0]]
+    for i in range(0, math.ceil(mean - class_count[1])):
+        rotated_image = rotate_image(image)
+        X_train_augmented.append(rotated_image)
+        y_train_augmented.append(class_count[0])
+
+# TODO Obtain the mean of the number of classes as shown in the histogram
+# TODO Then for each class with count under the mean, add rotation
+
+# bincount: Count number of occurrences of each value in array of non-negative ints.
+# Each bin gives the number of occurrences of its index value in x. If weights is specified the input array
+# is weighted by it, i.e. if a value n is found at position i, out[n] += weight[i] instead of out[n] += 1.
+count_per_class = np.bincount(y_train)
+print(np.bincount(y_train))
+mean = np.mean(count_per_class)
+print('{} => {}'.format('Mean of y_valid', mean))
+
+# TODO Pythonise this
+idx = np.where(count_per_class < mean)[0]
+low_values = count_per_class[idx]
+
+[augment_class(mean, x) for x in zip(idx, low_values)]
+
+X_train_augmented = np.array(X_train_augmented)[Ellipsis, np.newaxis]
+# X_train = np.append(X_train, X_train_augmented, axis=0)
+# y_train = np.append(y_train, y_train_augmented, axis=0)
 
 print(X_train.shape)
-print(X_valid.shape)
+print(y_train.shape)
+
+new_n_classes = np.unique(y_train).size
+plt.hist(y_train, new_n_classes)
+plt.show()
 
 # ### Model Architecture
 
