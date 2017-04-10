@@ -215,7 +215,7 @@ import cv2
 
 
 def normalize_data(data):
-    return (data - 128.) / 255.
+    return data / 255 * 0.8 + 0.1
 
 
 def convert_gray(data):
@@ -339,6 +339,14 @@ plt.hist(y_train, new_n_classes)
 print(X_train.shape)
 print(y_train.shape)
 
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+
+X_train, y_train = shuffle(X_train, y_train)
+
+X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2, random_state=23)
+
+
 # ### Model Architecture
 
 # In[ ]:
@@ -361,8 +369,6 @@ def LeNet(x, use_dropout=False):
 
     # SOLUTION: Activation.
     conv1 = tf.nn.relu(conv1)
-    if use_dropout:
-        conv1 = tf.nn.dropout(conv1, keep_prob)
 
     # SOLUTION: Pooling. Input = 28x28x6. Output = 14x14x6.
     conv1 = tf.nn.max_pool(conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
@@ -374,8 +380,6 @@ def LeNet(x, use_dropout=False):
 
     # SOLUTION: Activation.
     conv2 = tf.nn.relu(conv2)
-    if use_dropout:
-        conv2 = tf.nn.dropout(conv2, keep_prob)
 
     # SOLUTION: Pooling. Input = 10x10x16. Output = 5x5x16.
     conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
@@ -422,7 +426,7 @@ keep_prob = tf.placeholder(tf.float32)
 
 rate = 0.001
 
-logits = LeNet(x)
+logits = LeNet(x, True)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y, logits=logits)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate=rate)
@@ -453,8 +457,6 @@ def evaluate(X_data, y_data):
 
 # In[ ]:
 
-from sklearn.utils import shuffle
-
 EPOCHS = 15
 BATCH_SIZE = 128
 
@@ -476,7 +478,7 @@ with tf.Session() as sess:
         for offset in range(0, num_examples, BATCH_SIZE):
             end = offset + BATCH_SIZE
             batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.7})
 
         validation_accuracy = evaluate(X_valid, y_valid)
         print("EPOCH {} ...".format(i + 1))
