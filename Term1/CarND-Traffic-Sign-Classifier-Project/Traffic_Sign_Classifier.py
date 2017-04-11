@@ -332,10 +332,6 @@ new_n_classes = np.unique(y_train).size
 plt.hist(y_train, new_n_classes)
 # plt.show()
 
-# NOTE Doubling the number of samples?
-# X_train = np.append(X_train, rotate_dataset(X_train)[Ellipsis, np.newaxis], axis=0)
-# y_train = np.append(y_train, y_train, axis=0)
-
 print(X_train.shape)
 print(y_train.shape)
 
@@ -457,7 +453,7 @@ def evaluate(X_data, y_data):
 
 # In[ ]:
 
-EPOCHS = 15
+EPOCHS = 10
 BATCH_SIZE = 128
 
 # In[ ]:
