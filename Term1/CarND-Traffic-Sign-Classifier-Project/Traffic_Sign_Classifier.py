@@ -33,7 +33,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-perform_train=False
+perform_train = False
 
 # TODO: Fill this in based on where you saved the training and testing data
 import sys
@@ -381,6 +381,7 @@ def LeNet(x, use_dropout=False):
     conv2_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=mu, stddev=sigma))
     conv2_b = tf.Variable(tf.zeros(16))
     conv2 = tf.nn.conv2d(conv1, conv2_W, strides=[1, 1, 1, 1], padding='VALID') + conv2_b
+    tf.add_to_collection("conv2", conv2)
 
     # SOLUTION: Activation.
     conv2 = tf.nn.relu(conv2)
@@ -535,6 +536,7 @@ def load_images(dir):
 
 # ### Predict the Sign Type for Each Image
 
+
 def predict(images):
     saver = tf.train.Saver()
     # Load model
@@ -637,11 +639,31 @@ print(top_five)
 # 
 # ## Step 4 (Optional): Visualize the Neural Network's State with Test Images
 # 
-#  This Section is not required to complete but acts as an additional excersise for understaning the output of a neural network's weights. While neural networks can be a great learning device they are often referred to as a black box. We can understand what the weights of a neural network look like better by plotting their feature maps. After successfully training your neural network you can see what it's feature maps look like by plotting the output of the network's weight layers in response to a test stimuli image. From these plotted feature maps, it's possible to see what characteristics of an image the network finds interesting. For a sign, maybe the inner network feature maps react with high activation to the sign's boundary outline or to the contrast in the sign's painted symbol.
+#  This Section is not required to complete but acts as an additional exercise for understanding the output of a neural
+# network's weights. While neural networks can be a great learning device they are often referred to as a black box.
+#  We can understand what the weights of a neural network look like better by plotting their feature maps.
+# After successfully training your neural network you can see what it's feature maps look like by plotting the output
+# of the network's weight layers in response to a test stimuli image. From these plotted feature maps,
+# t's possible to see what characteristics of an image the network finds interesting.
+# For a sign, maybe the inner network feature maps react with high activation to the sign's boundary outline
+# or to the contrast in the sign's painted symbol.
 # 
-#  Provided for you below is the function code that allows you to get the visualization output of any tensorflow weight layer you want. The inputs to the function should be a stimuli image, one used during training or a new one you provided, and then the tensorflow variable name that represents the layer's state during the training process, for instance if you wanted to see what the [LeNet lab's](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/6df7ae49-c61c-4bb2-a23e-6527e69209ec/lessons/601ae704-1035-4287-8b11-e2c2716217ad/concepts/d4aca031-508f-4e0b-b493-e7b706120f81) feature maps looked like for it's second convolutional layer you could enter conv2 as the tf_activation variable.
+#  Provided for you below is the function code that allows you to get the visualization output of any tensorflow weight
+# layer you want. The inputs to the function should be a stimuli image, one used during training or a new one you
+# provided, and then the tensorflow variable name that represents the layer's state during the training process,
+# for instance if you wanted to see what the [LeNet lab's]
+# (https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/6df7ae49-c61c-4bb2-a23e-6527e69209ec/lessons/601ae704-1035-4287-8b11-e2c2716217ad/concepts/d4aca031-508f-4e0b-b493-e7b706120f81)
+# feature maps looked like for it's second convolutional layer you could enter conv2 as the tf_activation variable.
 # 
-# For an example of what feature map outputs look like, check out NVIDIA's results in their paper [End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/) in the section Visualization of internal CNN State. NVIDIA was able to show that their network's inner weights had high activations to road boundary lines by comparing feature maps from an image with a clear path to one without. Try experimenting with a similar test to show that your trained network's weights are looking for interesting features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature maps look like in a trained network vs a completely untrained one on the same sign image.
+# For an example of what feature map outputs look like, check out NVIDIA's results in their paper
+# [End-to-End Deep Learning for Self-Driving Cars]
+# (https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/)
+#  in the section Visualization of internal CNN State.
+# NVIDIA was able to show that their network's inner weights had high activations to road boundary lines by comparing
+# feature maps from an image with a clear path to one without.
+# Try experimenting with a similar test to show that your trained network's weights are looking for interesting
+# features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature
+# maps look like in a trained network vs a completely untrained one on the same sign image.
 # 
 # <figure>
 #  <img src="visualize_cnn.png" width="380" alt="Combined Image" />
@@ -663,13 +685,13 @@ print(top_five)
 # activation_min/max: can be used to view the activation contrast in more detail, by default matplot sets min and max to the actual min and max values of the output
 # plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number for each new feature map entry
 
-def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
+def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
     # Here make sure to preprocess your image_input in a way your network expects
     # with size, normalization, ect if needed
-    # image_input =
     # Note: x should be the same name as your network's tensorflow data placeholder variable
     # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function
-    activation = tf_activation.eval(session=sess, feed_dict={x: image_input})
+    activation = tf_activation.eval(session=sess, feed_dict={x: image_input, keep_prob: 1.0})
+    print(activation.shape)
     featuremaps = activation.shape[3]
     plt.figure(plt_num, figsize=(15, 15))
     for featuremap in range(featuremaps):
@@ -685,6 +707,13 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
         else:
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", cmap="gray")
 
+
+# saver = tf.train.Saver()
+# layer_var = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16)), name="conv2")
+# with tf.Session() as sess:
+#     saver.restore(sess, save_filename)
+#     print(images[0].shape)
+#     outputFeatureMap(sess, [images[0]], layer_var)
 
 if __name__ == '__main__':
     opts, args = getopt.getopt(sys.argv[1:], "train")
