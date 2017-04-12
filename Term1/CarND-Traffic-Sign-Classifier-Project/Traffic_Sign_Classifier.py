@@ -24,12 +24,20 @@
 # In[ ]:
 
 # Load pickled data
+import glob
+
+import getopt
+
 import pickle
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+perform_train=False
+
 # TODO: Fill this in based on where you saved the training and testing data
+import sys
+
 data_dir = './traffic-signs-data/'
 training_file = os.path.join(data_dir, 'train.p')
 validation_file = os.path.join(data_dir, 'valid.p')
@@ -429,6 +437,7 @@ optimizer = tf.train.AdamOptimizer(learning_rate=rate)
 training_operation = optimizer.minimize(loss_operation)
 
 # In[ ]:
+save_filename = './traffic_classifier'
 
 correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))
 accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -463,29 +472,32 @@ BATCH_SIZE = 128
 ### Once a final model architecture is selected, 
 ### the accuracy on the test set should be calculated and reported as well.
 ### Feel free to use as many code cells as needed.
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    num_examples = len(X_train)
+def train(X_train, y_train):
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        num_examples = len(X_train)
 
-    print("Training...")
-    print()
-    for i in range(EPOCHS):
-        X_train, y_train = shuffle(X_train, y_train)
-        for offset in range(0, num_examples, BATCH_SIZE):
-            end = offset + BATCH_SIZE
-            batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.7})
-
-        validation_accuracy = evaluate(X_valid, y_valid)
-        print("EPOCH {} ...".format(i + 1))
-        print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+        print("Training...")
         print()
+        for i in range(EPOCHS):
+            X_train, y_train = shuffle(X_train, y_train)
+            for offset in range(0, num_examples, BATCH_SIZE):
+                end = offset + BATCH_SIZE
+                batch_x, batch_y = X_train[offset:end], y_train[offset:end]
+                sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.7})
 
-    test_accuracy = evaluate(X_test, y_test)
-    print("Test Accuracy = {:.3f}".format(test_accuracy))
-    saver.save(sess, './traffic_classifier')
-    print("Model saved")
+            validation_accuracy = evaluate(X_valid, y_valid)
+            print("EPOCH {} ...".format(i + 1))
+            print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+            print()
 
+        test_accuracy = evaluate(X_test, y_test)
+        print("Test Accuracy = {:.3f}".format(test_accuracy))
+        saver.save(sess, save_filename)
+        print("Model saved")
+
+if perform_train:
+    train(X_train, y_train)
 
 # ---
 # 
@@ -502,8 +514,45 @@ with tf.Session() as sess:
 ### Load the images and plot them here.
 ### Feel free to use as many code cells as needed.
 
+predictions_img_filter = './predictions/*.png'
+
+
+def load_images(dir):
+    images_path = [file for file in glob.glob(dir)]
+    processed_images = []
+    for image_path in images_path:
+        # 1. Transform to grayscale
+        print(image_path)
+        image = cv2.imread(image_path)
+        processed_images.append(image)
+
+    processed_images = convert_gray(processed_images)
+    processed_images = normalize_data(processed_images)
+    print(processed_images.shape)
+    processed_images = processed_images[..., np.newaxis]
+    print(processed_images.shape)
+    return np.array(processed_images)
 
 # ### Predict the Sign Type for Each Image
+
+def predict(images):
+    saver = tf.train.Saver()
+    # Load model
+    with tf.Session() as sess:
+        saver.restore(sess, save_filename)
+        print("Model restored")
+        # Feed image into feed_dict
+        predictor = tf.argmax(logits, 1)
+        prediction = sess.run(predictor, feed_dict={x: images, keep_prob: 1.0})
+        # Get prediction
+        return prediction
+
+images = load_images(predictions_img_filter)
+# TODO Show images
+predictions = predict(images)
+for pred in predictions:
+    print(pred)
+
 
 # In[ ]:
 
@@ -624,3 +673,9 @@ def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_m
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", vmin=activation_min, cmap="gray")
         else:
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", cmap="gray")
+
+
+if __name__ == '__main__':
+    opts, args = getopt.getopt(sys.argv[1:], "train")
+    print(opts)
+    print(args)
