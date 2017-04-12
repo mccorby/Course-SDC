@@ -367,56 +367,62 @@ def LeNet(x, use_dropout=False):
     sigma = 0.1
 
     # SOLUTION: Layer 1: Convolutional. Input = 32x32x1. Output = 28x28x6.
-    conv1_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=mu, stddev=sigma))
-    conv1_b = tf.Variable(tf.zeros(6))
-    conv1 = tf.nn.conv2d(x, conv1_W, strides=[1, 1, 1, 1], padding='VALID') + conv1_b
+    # Variables created here will be named "conv1/weights", "conv1/biases".
+    with tf.variable_scope('conv1'):
+        conv1_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=mu, stddev=sigma), name='weights')
+        conv1_b = tf.Variable(tf.zeros(6), name='biases')
+        conv1 = tf.nn.conv2d(x, conv1_W, strides=[1, 1, 1, 1], padding='VALID') + conv1_b
 
-    # SOLUTION: Activation.
-    conv1 = tf.nn.relu(conv1)
+        # SOLUTION: Activation.
+        conv1 = tf.nn.relu(conv1)
 
-    # SOLUTION: Pooling. Input = 28x28x6. Output = 14x14x6.
-    conv1 = tf.nn.max_pool(conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
+        # SOLUTION: Pooling. Input = 28x28x6. Output = 14x14x6.
+        conv1 = tf.nn.max_pool(conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
 
-    # SOLUTION: Layer 2: Convolutional. Output = 10x10x16.
-    conv2_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=mu, stddev=sigma))
-    conv2_b = tf.Variable(tf.zeros(16))
-    conv2 = tf.nn.conv2d(conv1, conv2_W, strides=[1, 1, 1, 1], padding='VALID') + conv2_b
-    tf.add_to_collection("conv2", conv2)
+    with tf.variable_scope('conv2'):
+        # SOLUTION: Layer 2: Convolutional. Output = 10x10x16.
+        conv2_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=mu, stddev=sigma), name='weights')
+        conv2_b = tf.Variable(tf.zeros(16), name='biases')
+        conv2 = tf.nn.conv2d(conv1, conv2_W, strides=[1, 1, 1, 1], padding='VALID') + conv2_b
 
-    # SOLUTION: Activation.
-    conv2 = tf.nn.relu(conv2)
+        # SOLUTION: Activation.
+        conv2 = tf.nn.relu(conv2)
 
-    # SOLUTION: Pooling. Input = 10x10x16. Output = 5x5x16.
-    conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
+        # SOLUTION: Pooling. Input = 10x10x16. Output = 5x5x16.
+        conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
 
     # SOLUTION: Flatten. Input = 5x5x16. Output = 400.
     fc0 = flatten(conv2)
 
-    # SOLUTION: Layer 3: Fully Connected. Input = 400. Output = 120.
-    fc1_W = tf.Variable(tf.truncated_normal(shape=(400, 120), mean=mu, stddev=sigma))
-    fc1_b = tf.Variable(tf.zeros(120))
-    fc1 = tf.matmul(fc0, fc1_W) + fc1_b
+    with tf.variable_scope('fc1'):
+        # SOLUTION: Layer 3: Fully Connected. Input = 400. Output = 120.
+        fc1_W = tf.Variable(tf.truncated_normal(shape=(400, 120), mean=mu, stddev=sigma), name='weights')
+        fc1_b = tf.Variable(tf.zeros(120), name='biases')
+        fc1 = tf.matmul(fc0, fc1_W) + fc1_b
 
-    # SOLUTION: Activation.
-    fc1 = tf.nn.relu(fc1)
-    if use_dropout:
-        fc1 = tf.nn.dropout(fc1, keep_prob)
+        # SOLUTION: Activation.
+        fc1 = tf.nn.relu(fc1)
+        if use_dropout:
+            fc1 = tf.nn.dropout(fc1, keep_prob)
 
-    # SOLUTION: Layer 4: Fully Connected. Input = 120. Output = 84.
-    fc2_W = tf.Variable(tf.truncated_normal(shape=(120, 84), mean=mu, stddev=sigma))
-    fc2_b = tf.Variable(tf.zeros(84))
-    fc2 = tf.matmul(fc1, fc2_W) + fc2_b
+    with tf.variable_scope('fc2'):
+        # SOLUTION: Layer 4: Fully Connected. Input = 120. Output = 84.
+        fc2_W = tf.Variable(tf.truncated_normal(shape=(120, 84), mean=mu, stddev=sigma), name='weights')
+        fc2_b = tf.Variable(tf.zeros(84), name='biases')
+        fc2 = tf.matmul(fc1, fc2_W) + fc2_b
 
-    # SOLUTION: Activation.
-    fc2 = tf.nn.relu(fc2)
-    if use_dropout:
-        fc2 = tf.nn.dropout(fc2, keep_prob)
+        # SOLUTION: Activation.
+        fc2 = tf.nn.relu(fc2, name='fc2')
+        if use_dropout:
+            fc2 = tf.nn.dropout(fc2, keep_prob)
 
-    # SOLUTION: Layer 5: Fully Connected. Input = 84. Output = 43.
-    fc3_W = tf.Variable(tf.truncated_normal(shape=(84, n_classes), mean=mu, stddev=sigma))
-    fc3_b = tf.Variable(tf.zeros(n_classes))
-    logits = tf.matmul(fc2, fc3_W) + fc3_b
+    with tf.variable_scope('fc3'):
+        # SOLUTION: Layer 5: Fully Connected. Input = 84. Output = 43.
+        fc3_W = tf.Variable(tf.truncated_normal(shape=(84, n_classes), mean=mu, stddev=sigma), name='weights')
+        fc3_b = tf.Variable(tf.zeros(n_classes), name='biases')
+        logits = tf.matmul(fc2, fc3_W) + fc3_b
 
+    tf.add_to_collection('logits', logits)
     return logits
 
 
@@ -664,26 +670,15 @@ print(top_five)
 # Try experimenting with a similar test to show that your trained network's weights are looking for interesting
 # features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature
 # maps look like in a trained network vs a completely untrained one on the same sign image.
-# 
-# <figure>
-#  <img src="visualize_cnn.png" width="380" alt="Combined Image" />
-#  <figcaption>
-#  <p></p> 
-#  <p style="text-align: center;"> Your output should look something like this (above)</p> 
-#  </figcaption>
-# </figure>
-#  <p></p> 
-# 
 
-# In[ ]:
-
-### Visualize your network's feature maps here.
-### Feel free to use as many code cells as needed.
 
 # image_input: the test image being fed into the network to produce the feature maps
-# tf_activation: should be a tf variable name used during your training procedure that represents the calculated state of a specific weight layer
-# activation_min/max: can be used to view the activation contrast in more detail, by default matplot sets min and max to the actual min and max values of the output
-# plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number for each new feature map entry
+# tf_activation: should be a tf variable name used during your training procedure that represents the calculated state
+# of a specific weight layer
+# activation_min/max: can be used to view the activation contrast in more detail, by default matplot sets min and max
+# to the actual min and max values of the output
+# plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number
+# for each new feature map entry
 
 def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
     # Here make sure to preprocess your image_input in a way your network expects
@@ -708,12 +703,13 @@ def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activa
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", cmap="gray")
 
 
-# saver = tf.train.Saver()
-# layer_var = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16)), name="conv2")
-# with tf.Session() as sess:
-#     saver.restore(sess, save_filename)
-#     print(images[0].shape)
-#     outputFeatureMap(sess, [images[0]], layer_var)
+saver = tf.train.Saver()
+with tf.Session() as sess:
+    saver.restore(sess, save_filename)
+    with tf.variable_scope('conv1'):
+        layer = tf.get_variable('weights', )
+
+    outputFeatureMap(sess, [images[0]], layer)
 
 if __name__ == '__main__':
     opts, args = getopt.getopt(sys.argv[1:], "train")
