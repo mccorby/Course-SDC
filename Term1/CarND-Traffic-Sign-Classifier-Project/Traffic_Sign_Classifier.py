@@ -613,8 +613,19 @@ for pred in predictions:
 
 ### Print out the top five softmax probabilities for the predictions on the German traffic sign images found on the web. 
 ### Feel free to use as many code cells as needed.
+def calculate_top(images=images, k=5):
+    # TODO Use the same session here!
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, save_filename)
+        predictions = sess.run(tf.nn.softmax(logits), feed_dict={x: images, keep_prob: 1.0})
+        top_five = sess.run(tf.nn.top_k(predictions, k))
+        return top_five
 
+top_five = calculate_top(images=images)
+print(top_five)
 
+# print('{}->{}'.format((prob, idx) for prob, idx in zip(top_five[0], top_five[1])))
 # ### Project Writeup
 # 
 # Once you have completed the code implementation, document your results in a project writeup using this [template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) as a guide. The writeup can be in a markdown or pdf file. 
