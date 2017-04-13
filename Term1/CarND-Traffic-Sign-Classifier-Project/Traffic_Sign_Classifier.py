@@ -33,7 +33,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-perform_train = False
+perform_train = True
 
 # TODO: Fill this in based on where you saved the training and testing data
 import sys
@@ -392,7 +392,9 @@ def LeNet(x, use_dropout=False):
         conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
 
     # SOLUTION: Flatten. Input = 5x5x16. Output = 400.
-    fc0 = flatten(conv2)
+    with tf.variable_scope('fc0'):
+        tf.add_to_collection('weights', conv2)
+        fc0 = flatten(conv2)
 
     with tf.variable_scope('fc1'):
         # SOLUTION: Layer 3: Fully Connected. Input = 400. Output = 120.
@@ -685,7 +687,7 @@ def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activa
     # with size, normalization, ect if needed
     # Note: x should be the same name as your network's tensorflow data placeholder variable
     # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function
-    activation = tf_activation.eval(session=sess, feed_dict={x: image_input, keep_prob: 1.0})
+    activation = tf_activation.eval(session=sess)
     print(activation.shape)
     featuremaps = activation.shape[3]
     plt.figure(plt_num, figsize=(15, 15))
@@ -701,14 +703,20 @@ def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activa
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", vmin=activation_min, cmap="gray")
         else:
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", cmap="gray")
+    plt.show()
+
+
+tf.reset_default_graph()
+with tf.variable_scope('conv1', reuse=True):
+    layer = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=0., stddev=0.1), name='weights')
+
+with tf.variable_scope('conv2'):
+    layer = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=0., stddev=0.1), name='weights')
 
 
 saver = tf.train.Saver()
 with tf.Session() as sess:
     saver.restore(sess, save_filename)
-    with tf.variable_scope('conv1'):
-        layer = tf.get_variable('weights', )
-
     outputFeatureMap(sess, [images[0]], layer)
 
 if __name__ == '__main__':
