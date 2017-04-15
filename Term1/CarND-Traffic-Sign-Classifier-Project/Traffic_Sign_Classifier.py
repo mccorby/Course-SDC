@@ -11,15 +11,14 @@
 # Load pickled data
 import glob
 
-import getopt
 import math
 import random
 
+import csv
 import pickle
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import cv2
 from cnn import LeNet
 import tensorflow as tf
@@ -28,6 +27,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
 perform_train = False
+
+
+def load_sign_names():
+    """
+    Load the sign names into a dictionary
+    :return: a dictionary with the sign id and names 
+    """
+    with open('signnames.csv') as sign_names_file:
+        reader = csv.reader(sign_names_file)
+        next(reader, None)
+        return {int(row[0]):row[1] for row in reader}
+
+
+sign_names = load_sign_names()
+print(sign_names)
 
 
 def load_data(dir):
@@ -92,16 +106,10 @@ print("Number of classes =", n_classes)
 
 # ### Include an exploratory visualization of the dataset
 
-# Visualize the German Traffic Signs Dataset using the pickled file(s). This is open ended, suggestions include: plotting traffic sign images, plotting the count of each sign, etc. 
-# 
-# The [Matplotlib](http://matplotlib.org/) [examples](http://matplotlib.org/examples/index.html) and [gallery](http://matplotlib.org/gallery.html) pages are a great resource for doing visualizations in Python.
-# 
-# **NOTE:** It's recommended you start with something simple first. If you wish to do more, come back to it after you've completed the rest of the sections. It can be interesting to look at the distribution of classes in the training, validation and test set. Is the distribution the same? Are there more examples of some classes than others?
-
-# In[ ]:
-
+# Visualize the German Traffic Signs Dataset using the pickled file(s). This is open ended, suggestions include:
+# plotting traffic sign images, plotting the count of each sign, etc.
+#
 ### Data exploration visualization code goes here.
-### Feel free to use as many code cells as needed.
 
 
 # Visualizations will be shown in the notebook.
@@ -119,7 +127,6 @@ def plot_count_signals(data, set_name):
     # Create a figure and a set of subplots
     # This utility wrapper makes it convenient to create
     # common layouts of subplots, including the enclosing figure object, in a single call.
-    fig, ax = plt.subplots()
 
     index = np.arange(n_groups)
     bar_width = 0.35
@@ -134,11 +141,7 @@ def plot_count_signals(data, set_name):
     plt.xlabel('Signal Id')
     plt.ylabel('Count')
     plt.title('{}: {}'.format(set_name, 'Samples per signal'))
-    plt.xticks(index + bar_width / 2, signals)
     plt.legend()
-
-    plt.tight_layout()
-    plt.show()
 
 
 def show_histogram(img):
@@ -160,22 +163,40 @@ def get_random_image(data):
     return data[index].squeeze(), index
 
 
-def visualize_data():
+def visualize_desc_data():
     global image, index
     image, index = get_random_image(X_train)
     show_random_image(image)
     print('{}: {}'.format('Index', y_train[index]))
     show_histogram(image)
+
+    figure = plt.figure()
+    figure.add_subplot(2, 4, 1)
     plot_count_signals(y_train, 'Train Set')
+    figure.add_subplot(2, 4, 2)
     plot_count_signals(y_valid, 'Validation Set')
+    figure.add_subplot(2, 4, 3)
     plot_count_signals(y_test, 'Test Set')
+    figure.add_subplot(2, 4, 4)
     plt.hist(y_train, n_classes)
     plt.show()
 
+visualize_desc_data()
 
-visualize_data()
+
+def visualize_dataset():
+    plt.figure(figsize=(18, 18))
+    for i in range(0, n_classes):
+        plt.subplot(11, 4, i + 1)
+        x_selected = X_train[y_train == i]
+        plt.imshow(x_selected[0, :, :, :])
+        plt.title('{} - {}'.format(i, sign_names[i]))
+        plt.axis('off')
+    plt.tight_layout()
+    plt.show()
 
 
+visualize_dataset()
 # ----
 # 
 # ## Step 2: Design and Test a Model Architecture
@@ -242,11 +263,6 @@ def rotate_dataset(data):
     return np.array(converted)
 
 
-def apply_denoising(img):
-    # Apply Gaussian smoothering
-    pass
-
-
 def apply_histogram_eq(data):
     """
     http://docs.opencv.org/3.1.0/d5/daf/tutorial_py_histogram_equalization.html
@@ -287,8 +303,6 @@ def visualize_preprocessed_data():
 
 visualize_preprocessed_data()
 
-# In[ ]:
-
 # Extend the dataset
 X_train_augmented = []
 y_train_augmented = []
@@ -323,10 +337,6 @@ low_values = count_per_class[idx]
 X_train_augmented = np.array(X_train_augmented)[Ellipsis, np.newaxis]
 X_train = np.append(X_train, X_train_augmented, axis=0)
 y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
-
-new_n_classes = np.unique(y_train).size
-plt.hist(y_train, new_n_classes)
-plt.show()
 
 print(X_train.shape)
 print(y_train.shape)
@@ -437,9 +447,7 @@ def load_unseen_images(dir):
 
     processed_images = convert_gray(processed_images)
     processed_images = normalize_data(processed_images)
-    print(processed_images.shape)
     processed_images = processed_images[..., np.newaxis]
-    print(processed_images.shape)
     return np.array(processed_images)
 
 
@@ -464,7 +472,7 @@ images = load_unseen_images(predictions_img_filter)
 # TODO Show images
 predictions = predict(images)
 for pred in predictions:
-    print(pred)
+    print('{} - {}'.format(pred, sign_names[pred]))
 
 
 # ## Run the predictions here and use the model to output the prediction for each image.
