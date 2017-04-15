@@ -6,53 +6,49 @@
 # 
 # ## Project: Build a Traffic Sign Recognition Classifier
 # 
-# In this notebook, a template is provided for you to implement your functionality in stages, which is required to successfully complete this project. If additional code is required that cannot be included in the notebook, be sure that the Python code is successfully imported and included in your submission if necessary. 
-# 
-# > **Note**: Once you have completed all of the code implementations, you need to finalize your work by exporting the iPython Notebook as an HTML document. Before exporting the notebook to html, all of the code cells need to have been run so that reviewers can see the final implementation and output. You can then export the notebook by using the menu above and navigating to  \n",
-#     "**File -> Download as -> HTML (.html)**. Include the finished document along with this notebook as your submission. 
-# 
-# In addition to implementing code, there is a writeup to complete. The writeup should be completed in a separate file, which can be either a markdown file or a pdf document. There is a [write up template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) that can be used to guide the writing process. Completing the code template and writeup template will cover all of the [rubric points](https://review.udacity.com/#!/rubrics/481/view) for this project.
-# 
-# The [rubric](https://review.udacity.com/#!/rubrics/481/view) contains "Stand Out Suggestions" for enhancing the project beyond the minimum requirements. The stand out suggestions are optional. If you decide to pursue the "stand out suggestions", you can include the code in this Ipython notebook and also discuss the results in the writeup file.
-# 
-# 
-# >**Note:** Code and Markdown cells can be executed using the **Shift + Enter** keyboard shortcut. In addition, Markdown cells can be edited by typically double-clicking the cell to enter edit mode.
-
-# ---
 # ## Step 0: Load The Data
-
-# In[ ]:
 
 # Load pickled data
 import glob
 
 import getopt
+import math
+import random
 
 import pickle
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
-perform_train = True
-
-# TODO: Fill this in based on where you saved the training and testing data
 import sys
+import cv2
+from cnn import LeNet
+import tensorflow as tf
+
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+
+perform_train = False
+
+
+def load_data(dir):
+    training_file = os.path.join(dir, 'train.p')
+    validation_file = os.path.join(dir, 'valid.p')
+    testing_file = os.path.join(dir, 'test.p')
+    with open(training_file, mode='rb') as f:
+        train = pickle.load(f)
+    with open(validation_file, mode='rb') as f:
+        valid = pickle.load(f)
+    with open(testing_file, mode='rb') as f:
+        test = pickle.load(f)
+    X_train, y_train = train['features'], train['labels']
+    X_valid, y_valid = valid['features'], valid['labels']
+    X_test, y_test = test['features'], test['labels']
+    return train, X_train, y_train, X_valid, y_valid, X_test, y_test
+
 
 data_dir = './traffic-signs-data/'
-training_file = os.path.join(data_dir, 'train.p')
-validation_file = os.path.join(data_dir, 'valid.p')
-testing_file = os.path.join(data_dir, 'test.p')
 
-with open(training_file, mode='rb') as f:
-    train = pickle.load(f)
-with open(validation_file, mode='rb') as f:
-    valid = pickle.load(f)
-with open(testing_file, mode='rb') as f:
-    test = pickle.load(f)
-
-X_train, y_train = train['features'], train['labels']
-X_valid, y_valid = valid['features'], valid['labels']
-X_test, y_test = test['features'], test['labels']
+train, X_train, y_train, X_valid, y_valid, X_test, y_test = load_data(data_dir)
 
 # ---
 # 
@@ -69,24 +65,22 @@ X_test, y_test = test['features'], test['labels']
 
 # ### Provide a Basic Summary of the Data Set Using Python, Numpy and/or Pandas
 
-# In[ ]:
-
 ### Replace each question mark with the appropriate value. 
 ### Use python, pandas or numpy methods rather than hard coding the results
 
-# TODO: Number of training examples
+# Number of training examples
 n_train = len(X_train)
 
-# TODO: Number of validation examples
+# Number of validation examples
 n_validation = len(X_valid)
 
-# TODO: Number of testing examples.
+# Number of testing examples.
 n_test = len(X_test)
 
-# TODO: What's the shape of an traffic sign image?
+# What's the shape of an traffic sign image?
 image_shape = X_train[0].shape
 
-# TODO: How many unique classes/labels there are in the dataset.
+# How many unique classes/labels there are in the dataset.
 # TODO This can be done with np.unique()
 n_classes = len(set(y_train).union(set(y_valid).union(set(y_test))))
 
@@ -94,6 +88,7 @@ print("Number of training examples =", n_train)
 print("Number of testing examples =", n_test)
 print("Image data shape =", image_shape)
 print("Number of classes =", n_classes)
+
 
 # ### Include an exploratory visualization of the dataset
 
@@ -108,8 +103,6 @@ print("Number of classes =", n_classes)
 ### Data exploration visualization code goes here.
 ### Feel free to use as many code cells as needed.
 
-import random
-
 
 # Visualizations will be shown in the notebook.
 
@@ -119,7 +112,7 @@ def show_random_image(img, cmap=None):
     plt.imshow(img, cmap=cmap)
 
 
-def plot_count_signals(data):
+def plot_count_signals(data, set_name):
     signals, count = np.unique(data, return_counts=True)
     n_groups = len(count)
 
@@ -140,7 +133,7 @@ def plot_count_signals(data):
 
     plt.xlabel('Signal Id')
     plt.ylabel('Count')
-    plt.title('Number of examples per signal')
+    plt.title('{}: {}'.format(set_name, 'Samples per signal'))
     plt.xticks(index + bar_width / 2, signals)
     plt.legend()
 
@@ -167,21 +160,20 @@ def get_random_image(data):
     return data[index].squeeze(), index
 
 
-# In[ ]:
-
 def visualize_data():
     global image, index
     image, index = get_random_image(X_train)
     show_random_image(image)
     print('{}: {}'.format('Index', y_train[index]))
     show_histogram(image)
-    plot_count_signals(y_train)
-    plot_count_signals(y_valid)
-    plot_count_signals(y_test)
+    plot_count_signals(y_train, 'Train Set')
+    plot_count_signals(y_valid, 'Validation Set')
+    plot_count_signals(y_test, 'Test Set')
     plt.hist(y_train, n_classes)
     plt.show()
 
-# visualize_data()
+
+visualize_data()
 
 
 # ----
@@ -218,9 +210,6 @@ def visualize_data():
 ### Feel free to use as many code cells as needed.
 # http://sebastianraschka.com/Articles/2014_about_feature_scaling.html
 # http://en.wikipedia.org/wiki/Normalization_%28image_processing%29
-
-import cv2
-
 
 def normalize_data(data):
     return data / 255 * 0.8 + 0.1
@@ -269,20 +258,21 @@ def apply_histogram_eq(data):
         converted.append(cv2.equalizeHist(row))
     return np.array(converted)
 
+
 X_train = convert_gray(X_train)
 X_train = apply_histogram_eq(X_train)
-X_train = X_train[Ellipsis, np.newaxis]
+X_train = X_train[..., np.newaxis]
 X_train = normalize_data(X_train)
 
 X_valid = convert_gray(X_valid)
 X_valid = apply_histogram_eq(X_valid)
-X_valid = X_valid[Ellipsis, np.newaxis]
+X_valid = X_valid[..., np.newaxis]
 X_valid = normalize_data(X_valid)
 
 # X_test must be converted and normalized too
 X_test = convert_gray(X_test)
 X_test = apply_histogram_eq(X_test)
-X_test = X_test[Ellipsis, np.newaxis]
+X_test = X_test[..., np.newaxis]
 X_test = normalize_data(X_test)
 
 
@@ -295,15 +285,13 @@ def visualize_preprocessed_data():
     show_random_image(image)
 
 
-# visualize_preprocessed_data()
+visualize_preprocessed_data()
 
 # In[ ]:
 
 # Extend the dataset
 X_train_augmented = []
 y_train_augmented = []
-
-import math
 
 
 def augment_class(mean, class_count):
@@ -314,8 +302,9 @@ def augment_class(mean, class_count):
         X_train_augmented.append(rotated_image)
         y_train_augmented.append(class_count[0])
 
-# TODO Obtain the mean of the number of classes as shown in the histogram
-# TODO Then for each class with count under the mean, add rotation
+
+# Obtain the mean of the number of classes as shown in the histogram
+# Then for each class with count under the mean, add rotation
 
 # bincount: Count number of occurrences of each value in array of non-negative ints.
 # Each bin gives the number of occurrences of its index value in x. If weights is specified the input array
@@ -335,118 +324,32 @@ X_train_augmented = np.array(X_train_augmented)[Ellipsis, np.newaxis]
 X_train = np.append(X_train, X_train_augmented, axis=0)
 y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
 
-
 new_n_classes = np.unique(y_train).size
 plt.hist(y_train, new_n_classes)
-# plt.show()
+plt.show()
 
 print(X_train.shape)
 print(y_train.shape)
 
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
-
 X_train, y_train = shuffle(X_train, y_train)
 
-X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2, random_state=23)
-
+X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2,
+                                                      random_state=23)
 
 # ### Model Architecture
-
-# In[ ]:
-
-### Define your architecture here.
-### Feel free to use as many code cells as needed.
-import tensorflow as tf
-from tensorflow.contrib.layers import flatten
-
-
-def LeNet(x, use_dropout=False):
-    # Arguments used for tf.truncated_normal, randomly defines variables for the weights and biases for each layer
-    mu = 0
-    sigma = 0.1
-
-    # SOLUTION: Layer 1: Convolutional. Input = 32x32x1. Output = 28x28x6.
-    # Variables created here will be named "conv1/weights", "conv1/biases".
-    with tf.variable_scope('conv1'):
-        conv1_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=mu, stddev=sigma), name='weights')
-        conv1_b = tf.Variable(tf.zeros(6), name='biases')
-        conv1 = tf.nn.conv2d(x, conv1_W, strides=[1, 1, 1, 1], padding='VALID') + conv1_b
-
-        # SOLUTION: Activation.
-        conv1 = tf.nn.relu(conv1)
-
-        # SOLUTION: Pooling. Input = 28x28x6. Output = 14x14x6.
-        conv1 = tf.nn.max_pool(conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-    with tf.variable_scope('conv2'):
-        # SOLUTION: Layer 2: Convolutional. Output = 10x10x16.
-        conv2_W = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=mu, stddev=sigma), name='weights')
-        conv2_b = tf.Variable(tf.zeros(16), name='biases')
-        conv2 = tf.nn.conv2d(conv1, conv2_W, strides=[1, 1, 1, 1], padding='VALID') + conv2_b
-
-        # SOLUTION: Activation.
-        conv2 = tf.nn.relu(conv2)
-
-        # SOLUTION: Pooling. Input = 10x10x16. Output = 5x5x16.
-        conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-    # SOLUTION: Flatten. Input = 5x5x16. Output = 400.
-    with tf.variable_scope('fc0'):
-        tf.add_to_collection('weights', conv2)
-        fc0 = flatten(conv2)
-
-    with tf.variable_scope('fc1'):
-        # SOLUTION: Layer 3: Fully Connected. Input = 400. Output = 120.
-        fc1_W = tf.Variable(tf.truncated_normal(shape=(400, 120), mean=mu, stddev=sigma), name='weights')
-        fc1_b = tf.Variable(tf.zeros(120), name='biases')
-        fc1 = tf.matmul(fc0, fc1_W) + fc1_b
-
-        # SOLUTION: Activation.
-        fc1 = tf.nn.relu(fc1)
-        if use_dropout:
-            fc1 = tf.nn.dropout(fc1, keep_prob)
-
-    with tf.variable_scope('fc2'):
-        # SOLUTION: Layer 4: Fully Connected. Input = 120. Output = 84.
-        fc2_W = tf.Variable(tf.truncated_normal(shape=(120, 84), mean=mu, stddev=sigma), name='weights')
-        fc2_b = tf.Variable(tf.zeros(84), name='biases')
-        fc2 = tf.matmul(fc1, fc2_W) + fc2_b
-
-        # SOLUTION: Activation.
-        fc2 = tf.nn.relu(fc2, name='fc2')
-        if use_dropout:
-            fc2 = tf.nn.dropout(fc2, keep_prob)
-
-    with tf.variable_scope('fc3'):
-        # SOLUTION: Layer 5: Fully Connected. Input = 84. Output = 43.
-        fc3_W = tf.Variable(tf.truncated_normal(shape=(84, n_classes), mean=mu, stddev=sigma), name='weights')
-        fc3_b = tf.Variable(tf.zeros(n_classes), name='biases')
-        logits = tf.matmul(fc2, fc3_W) + fc3_b
-
-    tf.add_to_collection('logits', logits)
-    return logits
-
-
-# In[ ]:
 
 x = tf.placeholder(tf.float32, (None, 32, 32, 1))
 y = tf.placeholder(tf.int32, (None))
 one_hot_y = tf.one_hot(y, n_classes)
 keep_prob = tf.placeholder(tf.float32)
 
-# In[ ]:
-
 rate = 0.001
 
-logits = LeNet(x, True)
+logits = LeNet(x, n_classes, use_dropout=False, keep_prob=0.7)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y, logits=logits)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate=rate)
 training_operation = optimizer.minimize(loss_operation)
-
-# In[ ]:
-save_filename = './traffic_classifier'
 
 correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))
 accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -469,18 +372,15 @@ def evaluate(X_data, y_data):
 # A validation set can be used to assess how well the model is performing. A low accuracy on the training and validation
 # sets imply underfitting. A high accuracy on the training set but low accuracy on the validation set implies overfitting.
 
-# In[ ]:
 
 EPOCHS = 10
 BATCH_SIZE = 128
+save_filename = './traffic_classifier'
 
-# In[ ]:
+# Train the model
+# Calculate and report the accuracy on the training and validation set.
 
-### Train your model here.
-### Calculate and report the accuracy on the training and validation set.
-### Once a final model architecture is selected, 
-### the accuracy on the test set should be calculated and reported as well.
-### Feel free to use as many code cells as needed.
+
 def train(X_train, y_train):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -505,6 +405,7 @@ def train(X_train, y_train):
         saver.save(sess, save_filename)
         print("Model saved")
 
+
 if perform_train:
     train(X_train, y_train)
 
@@ -518,7 +419,6 @@ if perform_train:
 
 # ### Load and Output the Images
 
-# In[ ]:
 
 ### Load the images and plot them here.
 ### Feel free to use as many code cells as needed.
@@ -526,7 +426,7 @@ if perform_train:
 predictions_img_filter = './predictions/*.png'
 
 
-def load_images(dir):
+def load_unseen_images(dir):
     images_path = [file for file in glob.glob(dir)]
     processed_images = []
     for image_path in images_path:
@@ -541,6 +441,7 @@ def load_images(dir):
     processed_images = processed_images[..., np.newaxis]
     print(processed_images.shape)
     return np.array(processed_images)
+
 
 # ### Predict the Sign Type for Each Image
 
@@ -557,26 +458,23 @@ def predict(images):
         # Get prediction
         return prediction
 
-images = load_images(predictions_img_filter)
+
+images = load_unseen_images(predictions_img_filter)
+
 # TODO Show images
 predictions = predict(images)
 for pred in predictions:
     print(pred)
 
 
-# In[ ]:
-
-### Run the predictions here and use the model to output the prediction for each image.
-### Make sure to pre-process the images with the same pre-processing pipeline used earlier.
-### Feel free to use as many code cells as needed.
+# ## Run the predictions here and use the model to output the prediction for each image.
+# ## Make sure to pre-process the images with the same pre-processing pipeline used earlier.
+# ## Feel free to use as many code cells as needed.
 
 
 # ### Analyze Performance
-
-# In[ ]:
-
-### Calculate the accuracy for these 5 new images. 
-### For example, if the model predicted 1 out of 5 signs correctly, it's 20% accurate on these new images.
+# ## Calculate the accuracy for these 5 new images.
+# ## For example, if the model predicted 1 out of 5 signs correctly, it's 20% accurate on these new images.
 
 
 # ### Output Top 5 Softmax Probabilities For Each Image Found on the Web
@@ -619,7 +517,6 @@ for pred in predictions:
 # 
 # Looking just at the first row we get `[ 0.34763842,  0.24879643,  0.12789202]`, you can confirm these are the 3 largest probabilities in `a`. You'll also notice `[3, 0, 5]` are the corresponding indices.
 
-# In[ ]:
 
 ### Print out the top five softmax probabilities for the predictions on the German traffic sign images found on the web. 
 ### Feel free to use as many code cells as needed.
@@ -629,22 +526,13 @@ def calculate_top(images=images, k=5):
     with tf.Session() as sess:
         saver.restore(sess, save_filename)
         predictions = sess.run(tf.nn.softmax(logits), feed_dict={x: images, keep_prob: 1.0})
-        top_five = sess.run(tf.nn.top_k(predictions, k))
-        return top_five
+        top_k = sess.run(tf.nn.top_k(predictions, k))
+        return top_k
 
-top_five = calculate_top(images=images)
+top_five = calculate_top(images=images, k=5)
 print(top_five)
 
-# print('{}->{}'.format((prob, idx) for prob, idx in zip(top_five[0], top_five[1])))
-# ### Project Writeup
-# 
-# Once you have completed the code implementation, document your results in a project writeup using this [template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) as a guide. The writeup can be in a markdown or pdf file. 
 
-# > **Note**: Once you have completed all of the code implementations and successfully answered each question above, you may finalize your work by exporting the iPython Notebook as an HTML document. You can do this by using the menu above and navigating to  \n",
-#     "**File -> Download as -> HTML (.html)**. Include the finished document along with this notebook as your submission.
-
-# ---
-# 
 # ## Step 4 (Optional): Visualize the Neural Network's State with Test Images
 # 
 #  This Section is not required to complete but acts as an additional exercise for understanding the output of a neural
@@ -682,13 +570,13 @@ print(top_five)
 # plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number
 # for each new feature map entry
 
-def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
+
+def output_feature_map(sess, image_input, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
     # Here make sure to preprocess your image_input in a way your network expects
     # with size, normalization, ect if needed
     # Note: x should be the same name as your network's tensorflow data placeholder variable
     # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function
     activation = tf_activation.eval(session=sess)
-    print(activation.shape)
     featuremaps = activation.shape[3]
     plt.figure(plt_num, figsize=(15, 15))
     for featuremap in range(featuremaps):
@@ -708,18 +596,14 @@ def outputFeatureMap(sess, image_input, tf_activation, activation_min=-1, activa
 
 tf.reset_default_graph()
 with tf.variable_scope('conv1', reuse=True):
-    layer = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=0., stddev=0.1), name='weights')
+    layer1 = tf.Variable(tf.truncated_normal(shape=(5, 5, 1, 6), mean=0., stddev=0.1), name='weights')
 
 with tf.variable_scope('conv2'):
-    layer = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=0., stddev=0.1), name='weights')
-
+    layer2 = tf.Variable(tf.truncated_normal(shape=(5, 5, 6, 16), mean=0., stddev=0.1), name='weights')
 
 saver = tf.train.Saver()
 with tf.Session() as sess:
     saver.restore(sess, save_filename)
-    outputFeatureMap(sess, [images[0]], layer)
 
-if __name__ == '__main__':
-    opts, args = getopt.getopt(sys.argv[1:], "train")
-    print(opts)
-    print(args)
+    output_feature_map(sess, [images[0]], layer1)
+    output_feature_map(sess, [images[0]], layer2)
