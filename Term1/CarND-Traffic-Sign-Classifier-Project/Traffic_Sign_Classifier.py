@@ -44,7 +44,6 @@ def load_sign_names():
 
 
 sign_names = load_sign_names()
-print(sign_names)
 
 
 def load_data(dir):
@@ -443,7 +442,6 @@ def load_unseen_images(dir):
     images_path = [file for file in glob.glob(dir)]
     processed_images = []
     for image_path in images_path:
-        # 1. Transform to grayscale
         print(image_path)
         image = cv2.imread(image_path)
         processed_images.append(image)
