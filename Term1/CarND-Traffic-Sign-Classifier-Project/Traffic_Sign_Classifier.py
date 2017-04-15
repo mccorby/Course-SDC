@@ -20,14 +20,17 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+
 from cnn import LeNet
 import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-perform_train = False
-
+show_images = True
+perform_train = True
+data_dir = './traffic-signs-data/'
+save_filename = './traffic_classifier'
 
 def load_sign_names():
     """
@@ -60,7 +63,6 @@ def load_data(dir):
     return train, X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
-data_dir = './traffic-signs-data/'
 
 train, X_train, y_train, X_valid, y_valid, X_test, y_test = load_data(data_dir)
 
@@ -155,7 +157,8 @@ def show_histogram(img):
     plt.axvline(0.5, color='r', ls='--', lw=2)
     plt.yticks([])
     plt.subplots_adjust(wspace=0.02, hspace=0.3, top=1, bottom=0.1, left=0, right=1)
-    plt.show()
+    if show_images:
+        plt.show()
 
 
 def get_random_image(data):
@@ -179,7 +182,8 @@ def visualize_desc_data():
     plot_count_signals(y_test, 'Test Set')
     figure.add_subplot(2, 4, 4)
     plt.hist(y_train, n_classes)
-    plt.show()
+    if show_images:
+        plt.show()
 
 visualize_desc_data()
 
@@ -193,7 +197,8 @@ def visualize_dataset():
         plt.title('{} - {}'.format(i, sign_names[i]))
         plt.axis('off')
     plt.tight_layout()
-    plt.show()
+    if show_images:
+        plt.show()
 
 
 visualize_dataset()
@@ -385,11 +390,9 @@ def evaluate(X_data, y_data):
 
 EPOCHS = 10
 BATCH_SIZE = 128
-save_filename = './traffic_classifier'
 
 # Train the model
 # Calculate and report the accuracy on the training and validation set.
-
 
 def train(X_train, y_train):
     with tf.Session() as sess:
@@ -541,6 +544,31 @@ top_five = calculate_top(images=images, k=5)
 print(top_five)
 
 
+# def relevance(dataset, labels):
+#     """
+#     Calculate precision and recall on the set passed as parameter
+#     :return: the precision and recall
+#     """
+#     precision = dict()
+#     recall = dict()
+#     prediction = []
+#     print('{} {}'.format('Shape dataset', dataset.shape))
+#     saver = tf.train.Saver()
+#     with tf.Session() as sess:
+#         saver.restore(sess, save_filename)
+#         # Feed image into feed_dict
+#         predictor = tf.argmax(logits, 1)
+#         prediction = sess.run(predictor, feed_dict={x: dataset, keep_prob: 1.0})
+#         # Get prediction
+#         print(prediction)
+#         precision, recall, _ = precision_recall_curve(y_test, prediction)
+#
+#     print(precision, recall)
+#
+#
+# relevance(X_test, y_test)
+
+
 # ## Step 4 (Optional): Visualize the Neural Network's State with Test Images
 # 
 #  This Section is not required to complete but acts as an additional exercise for understanding the output of a neural
@@ -599,7 +627,9 @@ def output_feature_map(sess, image_input, tf_activation, activation_min=-1, acti
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", vmin=activation_min, cmap="gray")
         else:
             plt.imshow(activation[0, :, :, featuremap], interpolation="nearest", cmap="gray")
-    plt.show()
+
+    if show_images:
+        plt.show()
 
 
 tf.reset_default_graph()
