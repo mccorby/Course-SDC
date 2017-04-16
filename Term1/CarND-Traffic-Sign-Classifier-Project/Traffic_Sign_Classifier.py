@@ -27,8 +27,8 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-show_images = True
-perform_train = True
+show_images = False
+perform_train = False
 data_dir = './traffic-signs-data/'
 save_filename = './traffic_classifier'
 
@@ -236,6 +236,7 @@ visualize_dataset()
 # http://sebastianraschka.com/Articles/2014_about_feature_scaling.html
 # http://en.wikipedia.org/wiki/Normalization_%28image_processing%29
 
+
 def normalize_data(data):
     return data / 255 * 0.8 + 0.1
 
@@ -246,6 +247,25 @@ def convert_gray(data):
     for row in data:
         converted.append(cv2.cvtColor(row, cv2.COLOR_BGR2GRAY))
     return np.array(converted)
+
+
+def apply_gaussian_blur(image):
+    """
+    Smooth image by applying Gaussian blur
+    :param image: the original image
+    :return: a new image 
+    """
+    return cv2.GaussianBlur(image, (5,5), 0)
+
+
+def increase_contrast(image):
+    """
+    Increase the intensity of the points of the image
+    :param image: the original image
+    :return: a new image with its points more intense
+    """
+    max_intensity = 255.
+    return max_intensity * (image / max_intensity) ** 0.5
 
 
 def rotate_image(img):
@@ -338,12 +358,45 @@ low_values = count_per_class[idx]
 
 [augment_class(mean, x) for x in zip(idx, low_values)]
 
-X_train_augmented = np.array(X_train_augmented)[Ellipsis, np.newaxis]
+X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
 X_train = np.append(X_train, X_train_augmented, axis=0)
 y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
 
-print(X_train.shape)
-print(y_train.shape)
+print('{} {} {}'.format('Mean augmented dataset', X_train.shape, y_train.shape))
+
+
+def add_transformations(original_image):
+    """
+    Augment the train dataset by adding modifications to each image
+    :param original_image: the image to be transformed 
+    :return: a list of images each being a transformation of the original one
+    """
+    rotated = rotate_image(original_image)
+    blurred = apply_gaussian_blur(original_image)
+    # contrast = increase_contrast(original_image)
+    return rotated, blurred
+
+# X_train_augmented, y_train_augmented = [add_transformations(x, y) for x, y in zip(X_train, y_train)]
+
+
+def augment_dataset():
+    new_X_train = []
+    new_y_train = []
+    for index in range(0, len(X_train)):
+        transforms = add_transformations(X_train[index])
+        new_X_train.extend(transforms)
+        new_y_train+= len(transforms) * [y_train[index]]
+    return new_X_train, new_y_train
+
+# Augmenting the train dataset
+X_train_augmented, y_train_augmented = augment_dataset()
+print('{} {} {}'.format('Augmented dataset', len(X_train_augmented), len(y_train_augmented)))
+
+X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
+X_train = np.append(X_train, X_train_augmented, axis=0)
+y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
+
+print('{} {} {}'.format('Augmented dataset', X_train.shape, y_train.shape))
 
 X_train, y_train = shuffle(X_train, y_train)
 
@@ -433,24 +486,48 @@ if perform_train:
 
 
 ### Load the images and plot them here.
-### Feel free to use as many code cells as needed.
-
 predictions_img_filter = './predictions/*.png'
 
-
-def load_unseen_images(dir):
-    images_path = [file for file in glob.glob(dir)]
-    processed_images = []
+def load_unseen_images(img_dir):
+    images_path = [file for file in glob.glob(img_dir)]
+    original_images = []
     for image_path in images_path:
         print(image_path)
         image = cv2.imread(image_path)
-        processed_images.append(image)
+        original_images.append(image)
 
-    processed_images = convert_gray(processed_images)
+    return original_images
+
+def process_images(images):
+    processed_images = convert_gray(images)
     processed_images = normalize_data(processed_images)
-    processed_images = processed_images[..., np.newaxis]
-    return np.array(processed_images)
+    return processed_images
 
+def show_unseen_images(images, cmap=None):
+    #Visualize new raw images
+    plt.figure(figsize=(12, 8))
+    for i in range(len(images)):
+        plt.subplot(3, 4, i+1)
+        plt.imshow(images[i], cmap=cmap)
+        plt.title(i)
+        plt.axis('off')
+    plt.show()
+
+
+original_images = load_unseen_images(predictions_img_filter)
+# show_unseen_images(original_images)
+
+images = process_images(original_images)
+print(images.shape)
+# show_unseen_images(images, cmap='gray')
+
+images = images[..., np.newaxis]
+images = np.array(images)
+
+
+# ## Run the predictions here and use the model to output the prediction for each image.
+# ## Make sure to pre-process the images with the same pre-processing pipeline used earlier.
+# ## Feel free to use as many code cells as needed.
 
 # ### Predict the Sign Type for Each Image
 
@@ -467,19 +544,17 @@ def predict(images):
         # Get prediction
         return prediction
 
-
-images = load_unseen_images(predictions_img_filter)
-
-# TODO Show images
 predictions = predict(images)
 for pred in predictions:
     print('{} - {}'.format(pred, sign_names[pred]))
 
-
-# ## Run the predictions here and use the model to output the prediction for each image.
-# ## Make sure to pre-process the images with the same pre-processing pipeline used earlier.
-# ## Feel free to use as many code cells as needed.
-
+plt.figure(figsize=(12, 8))
+for i in range(len(original_images)):
+    plt.subplot(3, 4, i + 1)
+    plt.imshow(original_images[i])
+    plt.title(sign_names[predictions[i]])
+    plt.axis('off')
+plt.show()
 
 # ### Analyze Performance
 # ## Calculate the accuracy for these 5 new images.
