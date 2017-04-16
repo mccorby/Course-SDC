@@ -42,7 +42,7 @@ I used standard Python to calculate summary statistics of the traffic
 signs data set:
 
 * The size of training set is 34779
-* The size of the validation set is ? TODO
+* The size of the validation set is 4410
 * The size of test set is 12630
 * The shape of a traffic sign image is 32x32x3
 * The number of unique classes/labels in the data set is 43
@@ -60,12 +60,8 @@ The graph shows the number of samples per class (a class being a type of traffic
 
 As a first step, I decided to convert the images to grayscale because it is demonstrated the color feature does not improve the performance of image recognition. Furthermore a grayscale image only needs a channel which makes the dataset lighter to process
 
-Here is an example of a traffic sign image before and after grayscaling.
-
-![alt text][image2]
-
 As a last step, I normalized the image data because data should be in a similar range when processed by the network
-This  helps avoidin the gradients running wild
+This  helps avoiding the gradients running wild
 
 I decided to generate additional data because:
  * The original dataset is skewed with some classes being underrepresented. This would make the predictions always favoured those classes with more samples
@@ -75,44 +71,55 @@ To add more data to the the data set, I used the following techniques:
  * Rotation. I applied a random rotation of less than 10 degrees
  * Gaussian smoothering
 
-These techniques allow the model to dispose of more data, easily labeled while being slightly different
+These techniques make available more data to the model and it's easily labeled while being slightly different
 
+Here is an example of an original image and its augmented versions:
 
-Here is an example of an original image and an augmented image:
-
-![alt text][image3]
+![alt text][image2]
 
  The final dataset used to train has TODO 140k samples
 
 
 ####2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
 
+The model I chose was a LeNet architecture. 
+Though I tried adding dropout I could not see much differences in the performance yet the execution time was sensible increased
+
+Note that the input is 32x32x1 because the network works with grayscale images. Here is where we can see now the convenience of using this transformation to the image
+
 My final model consisted of the following layers:
 
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
+| Input         		| 32x32x1 grayscale image   					| 
+| Convolution 3x3     	| 1x1 stride, valid padding, outputs 28x28x6 	|
 | RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
+| Max pooling	      	| 2x2 stride,  outputs 14x14x6   				|
+| Convolution 3x3	    | 1x1 stride, valid padding, outputs 10x10x16   |
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs 5x5x16   				|
+| Fully connected		| 400x120 with RELU activation                  |
+| Fully connected		| 120x84 with RELU activation                   |
+| Fully connected       | 84x43        									|
  
 
 
 ####3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
 
-To train the model, I used an ....
+To train the model, I used an Adam optimizer to minimize the cross-entropy (cost) of the network.
+Classes are represented by a one-hot vector
+Hyper-parameters:
+ * Epochs: 10
+ * Batch size: 128
+ * Learning rate: 0.001
+ * When using dropout, the probability of keeping a connection was set to 0.7
 
 ####4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
 
 My final model results were:
-* training set accuracy of ?
-* validation set accuracy of ? 
-* test set accuracy of ?
+* training set accuracy of TODO
+* validation set accuracy of 0.988 
+* test set accuracy of 0.897
 
 If an iterative approach was chosen:
 * What was the first architecture that was tried and why was it chosen?
