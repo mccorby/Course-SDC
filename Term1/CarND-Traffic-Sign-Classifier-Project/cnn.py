@@ -17,6 +17,9 @@ def LeNet(x, n_classes, use_dropout=False, keep_prob=0.7):
         # SOLUTION: Activation.
         conv1 = tf.nn.relu(conv1)
 
+        if use_dropout:
+            conv1 = tf.nn.dropout(conv1, keep_prob)
+
         # SOLUTION: Pooling. Input = 28x28x6. Output = 14x14x6.
         conv1 = tf.nn.max_pool(conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
 
@@ -28,6 +31,9 @@ def LeNet(x, n_classes, use_dropout=False, keep_prob=0.7):
 
         # SOLUTION: Activation.
         conv2 = tf.nn.relu(conv2)
+
+        if use_dropout:
+            conv2 = tf.nn.dropout(conv2, keep_prob)
 
         # SOLUTION: Pooling. Input = 10x10x16. Output = 5x5x16.
         conv2 = tf.nn.max_pool(conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')

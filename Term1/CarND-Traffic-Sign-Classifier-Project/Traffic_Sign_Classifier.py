@@ -6,9 +6,7 @@
 # 
 # ## Project: Build a Traffic Sign Recognition Classifier
 # 
-# ## Step 0: Load The Data
 
-# Load pickled data
 import glob
 
 import math
@@ -28,9 +26,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
 show_images = False
-perform_train = False
+perform_train = True
 data_dir = './traffic-signs-data/'
 save_filename = './traffic_classifier'
+
+
+# Step 0: Load The Data
+
+# Load pickled data
 
 def load_sign_names():
     """
@@ -172,19 +175,9 @@ def visualize_desc_data():
     print('{}: {}'.format('Index', y_train[index]))
     show_histogram(image)
 
-    figure = plt.figure()
-    figure.add_subplot(2, 4, 1)
-    plot_count_signals(y_train, 'Train Set')
-    figure.add_subplot(2, 4, 2)
-    plot_count_signals(y_valid, 'Validation Set')
-    figure.add_subplot(2, 4, 3)
-    plot_count_signals(y_test, 'Test Set')
-    figure.add_subplot(2, 4, 4)
     plt.hist(y_train, n_classes)
     if show_images:
         plt.show()
-
-visualize_desc_data()
 
 
 def visualize_dataset():
@@ -199,8 +192,9 @@ def visualize_dataset():
     if show_images:
         plt.show()
 
-
+visualize_desc_data()
 visualize_dataset()
+
 # ----
 # 
 # ## Step 2: Design and Test a Model Architecture
@@ -317,7 +311,6 @@ X_test = normalize_data(X_test)
 
 
 def visualize_preprocessed_data():
-    global image, index
     image, index = get_random_image(X_train)
     print('{}: {}'.format('Index', y_train[index]))
     show_random_image(image, 'gray')
@@ -352,7 +345,7 @@ print(np.bincount(y_train))
 mean = np.mean(count_per_class)
 print('{} => {}'.format('Mean of y_valid', mean))
 
-# TODO Pythonise this
+# TODO Pythonize this
 idx = np.where(count_per_class < mean)[0]
 low_values = count_per_class[idx]
 
@@ -376,8 +369,6 @@ def add_transformations(original_image):
     # contrast = increase_contrast(original_image)
     return rotated, blurred
 
-# X_train_augmented, y_train_augmented = [add_transformations(x, y) for x, y in zip(X_train, y_train)]
-
 
 def augment_dataset():
     new_X_train = []
@@ -385,12 +376,18 @@ def augment_dataset():
     for index in range(0, len(X_train)):
         transforms = add_transformations(X_train[index])
         new_X_train.extend(transforms)
-        new_y_train+= len(transforms) * [y_train[index]]
+        new_y_train += len(transforms) * [y_train[index]]
     return new_X_train, new_y_train
 
 # Augmenting the train dataset
 X_train_augmented, y_train_augmented = augment_dataset()
-print('{} {} {}'.format('Augmented dataset', len(X_train_augmented), len(y_train_augmented)))
+print('{} {} {}'.format('Augmenting dataset', len(X_train_augmented), len(y_train_augmented)))
+
+original, index = get_random_image(X_train)
+augmented = add_transformations(original)
+show_random_image(original, cmap='gray')
+show_random_image(augmented[0], cmap='gray')
+show_random_image(augmented[1], cmap='gray')
 
 X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
 X_train = np.append(X_train, X_train_augmented, axis=0)
@@ -398,6 +395,7 @@ y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
 
 print('{} {} {}'.format('Augmented dataset', X_train.shape, y_train.shape))
 
+# Shuffle and split dataset
 X_train, y_train = shuffle(X_train, y_train)
 
 X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2,
@@ -410,9 +408,9 @@ y = tf.placeholder(tf.int32, (None))
 one_hot_y = tf.one_hot(y, n_classes)
 keep_prob = tf.placeholder(tf.float32)
 
-rate = 0.001
+rate = 0.0005
 
-logits = LeNet(x, n_classes, use_dropout=False, keep_prob=0.7)
+logits = LeNet(x, n_classes, use_dropout=True, keep_prob=0.7)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y, logits=logits)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate=rate)
@@ -486,7 +484,8 @@ if perform_train:
 
 
 ### Load the images and plot them here.
-predictions_img_filter = './predictions/*.png'
+predictions_img_filter = './unseen_images/*.png'
+
 
 def load_unseen_images(img_dir):
     images_path = [file for file in glob.glob(img_dir)]
@@ -494,14 +493,19 @@ def load_unseen_images(img_dir):
     for image_path in images_path:
         print(image_path)
         image = cv2.imread(image_path)
+        # Images coming in BGR color format
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         original_images.append(image)
 
     return original_images
 
+
 def process_images(images):
     processed_images = convert_gray(images)
+    processed_images = apply_histogram_eq(processed_images)
     processed_images = normalize_data(processed_images)
     return processed_images
+
 
 def show_unseen_images(images, cmap=None):
     #Visualize new raw images
@@ -550,7 +554,7 @@ for pred in predictions:
 
 plt.figure(figsize=(12, 8))
 for i in range(len(original_images)):
-    plt.subplot(3, 4, i + 1)
+    plt.subplot(4, 4, i + 1)
     plt.imshow(original_images[i])
     plt.title(sign_names[predictions[i]])
     plt.axis('off')
@@ -614,32 +618,21 @@ def calculate_top(images=images, k=5):
         return top_k
 
 top_five = calculate_top(images=images, k=5)
-print(top_five)
 
+def show_images_top_predictions(images):
+    plt.figure(figsize=(16, 21))
+    for i in range(len(images)):
+        plt.subplot(12, 2, 2*i+1)
+        plt.imshow(images[i])
+        plt.title(i)
+        plt.axis('off')
+        plt.subplot(12, 2, 2*i+2)
+        plt.barh(np.arange(1, 6, 1), top_five.values[i, :])
+        labs=[sign_names[j] for j in top_five.indices[i]]
+        plt.yticks(np.arange(1, 6, 1), labs)
+    plt.show()
 
-# def relevance(dataset, labels):
-#     """
-#     Calculate precision and recall on the set passed as parameter
-#     :return: the precision and recall
-#     """
-#     precision = dict()
-#     recall = dict()
-#     prediction = []
-#     print('{} {}'.format('Shape dataset', dataset.shape))
-#     saver = tf.train.Saver()
-#     with tf.Session() as sess:
-#         saver.restore(sess, save_filename)
-#         # Feed image into feed_dict
-#         predictor = tf.argmax(logits, 1)
-#         prediction = sess.run(predictor, feed_dict={x: dataset, keep_prob: 1.0})
-#         # Get prediction
-#         print(prediction)
-#         precision, recall, _ = precision_recall_curve(y_test, prediction)
-#
-#     print(precision, recall)
-#
-#
-# relevance(X_test, y_test)
+show_images_top_predictions(original_images)
 
 
 # ## Step 4 (Optional): Visualize the Neural Network's State with Test Images
