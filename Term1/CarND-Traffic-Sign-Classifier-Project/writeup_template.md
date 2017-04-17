@@ -52,7 +52,7 @@ signs data set:
 Here is an exploratory visualization of the data set. It is a bar chart showing how the data is distributed.
 The graph shows the number of samples per class (a class being a type of traffic sign)
 
-![alt text][image1]
+![Samples per class] (./supporting_images/samples_count.png)
 
 ###Design and Test a Model Architecture
 
