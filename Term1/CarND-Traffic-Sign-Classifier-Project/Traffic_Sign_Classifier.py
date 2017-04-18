@@ -232,7 +232,7 @@ visualize_dataset()
 
 
 def normalize_data(data):
-    return data / 255 * 0.8 + 0.1
+    return ((data - 128.) / 128.).astype(np.float32)
 
 
 def convert_gray(data):
@@ -295,19 +295,19 @@ def apply_histogram_eq(data):
 
 X_train = convert_gray(X_train)
 X_train = apply_histogram_eq(X_train)
-X_train = X_train[..., np.newaxis]
 X_train = normalize_data(X_train)
+X_train = X_train[..., np.newaxis]
 
 X_valid = convert_gray(X_valid)
 X_valid = apply_histogram_eq(X_valid)
-X_valid = X_valid[..., np.newaxis]
 X_valid = normalize_data(X_valid)
+X_valid = X_valid[..., np.newaxis]
 
 # X_test must be converted and normalized too
 X_test = convert_gray(X_test)
 X_test = apply_histogram_eq(X_test)
-X_test = X_test[..., np.newaxis]
 X_test = normalize_data(X_test)
+X_test = X_test[..., np.newaxis]
 
 
 def visualize_preprocessed_data():
@@ -397,9 +397,10 @@ print('{} {} {}'.format('Augmented dataset', X_train.shape, y_train.shape))
 
 # Shuffle and split dataset
 X_train, y_train = shuffle(X_train, y_train)
+X_valid, y_valid = shuffle(X_valid, y_valid)
 
-X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2,
-                                                      random_state=23)
+# X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, stratify=y_train, test_size=0.2,
+#                                                       random_state=23)
 
 # ### Model Architecture
 
