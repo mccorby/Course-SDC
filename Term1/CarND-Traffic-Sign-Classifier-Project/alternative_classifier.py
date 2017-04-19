@@ -1,13 +1,7 @@
-import glob
-
-import math
-import random
-
 import csv
 import pickle
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 
 from cnn import LeNet
@@ -15,11 +9,12 @@ import tensorflow as tf
 
 from sklearn.utils import shuffle
 
+from data_augmenter import augment_dataset
 
 with open('signnames.csv') as sign_names_file:
     reader = csv.reader(sign_names_file)
     next(reader, None)
-    sign_names = {int(row[0]):row[1] for row in reader}
+    sign_names = {int(row[0]): row[1] for row in reader}
 
 data_dir = './traffic-signs-data/'
 training_file = os.path.join(data_dir, 'train.p')
@@ -74,6 +69,18 @@ X_train, y_train = shuffle(X_train, y_train)
 
 print(X_train.shape)
 
+
+# Augment data
+data_augmented, labels_augmented = augment_dataset(X_train, y_train)
+print('data_augmented size {}'.format(len(data_augmented)))
+data_augmented = np.array(data_augmented)[..., np.newaxis]
+labels_augmented = np.array(labels_augmented)
+X_train = np.append(X_train, data_augmented, axis=0)
+y_train = np.append(y_train, labels_augmented, axis=0)
+
+print('Data augmentation. Augmented size {}. Correct labels? {}'.format(len(data_augmented),
+                                                                        len(data_augmented) == len(labels_augmented)))
+
 # ### Model Architecture
 
 x = tf.placeholder(tf.float32, (None, 32, 32, 1))
@@ -106,10 +113,6 @@ def evaluate(X_data, y_data):
 
 
 # ### Train, Validate and Test the Model
-
-# A validation set can be used to assess how well the model is performing. A low accuracy on the training and validation
-# sets imply underfitting. A high accuracy on the training set but low accuracy on the validation set implies overfitting.
-
 
 EPOCHS = 10
 BATCH_SIZE = 128

@@ -249,7 +249,7 @@ def apply_gaussian_blur(image):
     :param image: the original image
     :return: a new image 
     """
-    return cv2.GaussianBlur(image, (5,5), 0)
+    return cv2.GaussianBlur(image, (5, 5), 0)
 
 
 def increase_contrast(image):
