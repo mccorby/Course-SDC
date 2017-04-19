@@ -28,3 +28,10 @@ merged = list(itertools.chain(*list_of_list))
 print(merged)
 
 print(math.ceil(43 / 4))
+
+
+def show_multiple(*args):
+    print(len(args))
+    print(args[0])
+
+show_multiple(5, 4, 3, 2)

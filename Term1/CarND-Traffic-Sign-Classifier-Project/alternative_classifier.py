@@ -3,6 +3,7 @@ import pickle
 import os
 import numpy as np
 import cv2
+import random
 
 from cnn import LeNet
 import tensorflow as tf
@@ -58,6 +59,16 @@ def preprocess(img):
     result = normalize(result)
     return result
 
+# Visualize how the preprocessing affects an image
+img_index = random.randint(0, len(X_train) - 1)
+random_img = X_train[img_index]
+gray_random_img = grayscale(random_img)
+hist_random_img = histogram(gray_random_img)
+data_explorer.show_preprocessed_images(random_img, gray_random_img, hist_random_img)
+
+# Show the number of samples per class
+data_explorer.show_histogram(y_train, n_classes)
+
 # Preprocess data
 X_train = [preprocess(x) for x in X_train]
 X_train = np.array(X_train)
@@ -77,6 +88,9 @@ print(X_train.shape)
 
 
 # Augment data
+random_augmented = data_augmenter.augment_image(random_img)
+data_explorer.show_images(random_augmented)
+
 data_augmented, labels_augmented = data_augmenter.augment_dataset(X_train, y_train)
 print('data_augmented size {}'.format(len(data_augmented)))
 data_augmented = np.array(data_augmented)[..., np.newaxis]
