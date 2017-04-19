@@ -264,8 +264,8 @@ def increase_contrast(image):
 
 def rotate_image(img):
     num_rows, num_cols = img.shape[:2]
-    grades = random.randint(-10, 10)
-    rotation_matrix = cv2.getRotationMatrix2D((num_cols / 2, num_rows / 2), grades, 1)
+    angle = random.randint(-5, 5)
+    rotation_matrix = cv2.getRotationMatrix2D((num_cols / 2, num_rows / 2), angle, 1)
     return cv2.warpAffine(img, rotation_matrix, (num_cols, num_rows))
 
 
@@ -349,11 +349,11 @@ print('{} => {}'.format('Mean of y_valid', mean))
 idx = np.where(count_per_class < mean)[0]
 low_values = count_per_class[idx]
 
-[augment_class(mean, x) for x in zip(idx, low_values)]
-
-X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
-X_train = np.append(X_train, X_train_augmented, axis=0)
-y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
+# [augment_class(mean, x) for x in zip(idx, low_values)]
+#
+# X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
+# X_train = np.append(X_train, X_train_augmented, axis=0)
+# y_train = np.append(y_train, np.array(y_train_augmented), axis=0)
 
 print('{} {} {}'.format('Mean augmented dataset', X_train.shape, y_train.shape))
 
@@ -365,18 +365,18 @@ def add_transformations(original_image):
     :return: a list of images each being a transformation of the original one
     """
     rotated = rotate_image(original_image)
-    blurred = apply_gaussian_blur(original_image)
+    # blurred = apply_gaussian_blur(original_image)
     # contrast = increase_contrast(original_image)
-    return rotated, blurred
-
+    # return rotated, blurred
+    return rotated
 
 def augment_dataset():
     new_X_train = []
     new_y_train = []
     for index in range(0, len(X_train)):
         transforms = add_transformations(X_train[index])
-        new_X_train.extend(transforms)
-        new_y_train += len(transforms) * [y_train[index]]
+        new_X_train.append(transforms)
+        new_y_train += [y_train[index]]
     return new_X_train, new_y_train
 
 # Augmenting the train dataset
@@ -385,9 +385,6 @@ print('{} {} {}'.format('Augmenting dataset', len(X_train_augmented), len(y_trai
 
 original, index = get_random_image(X_train)
 augmented = add_transformations(original)
-show_random_image(original, cmap='gray')
-show_random_image(augmented[0], cmap='gray')
-show_random_image(augmented[1], cmap='gray')
 
 X_train_augmented = np.array(X_train_augmented)[..., np.newaxis]
 X_train = np.append(X_train, X_train_augmented, axis=0)
@@ -409,9 +406,9 @@ y = tf.placeholder(tf.int32, (None))
 one_hot_y = tf.one_hot(y, n_classes)
 keep_prob = tf.placeholder(tf.float32)
 
-rate = 0.0005
+rate = 0.001
 
-logits = LeNet(x, n_classes, use_dropout=True, keep_prob=0.7)
+logits = LeNet(x, n_classes, use_dropout=True, keep_prob=keep_prob)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y, logits=logits)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate=rate)

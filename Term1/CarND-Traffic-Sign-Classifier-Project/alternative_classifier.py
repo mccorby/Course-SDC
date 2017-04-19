@@ -13,9 +13,7 @@ import cv2
 from cnn import LeNet
 import tensorflow as tf
 
-from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-
 
 
 with open('signnames.csv') as sign_names_file:
@@ -42,7 +40,7 @@ n_classes = len(np.unique(y_train))
 
 
 def normalize(img):
-    return (img - 128) / 128
+    return ((img - 128.) / 128.).astype(np.float32)
 
 
 def grayscale(img):
@@ -85,7 +83,7 @@ keep_prob = tf.placeholder(tf.float32)
 
 rate = 0.001
 
-logits = LeNet(x, n_classes, use_dropout=True, keep_prob=0.5)
+logits = LeNet(x, n_classes, use_dropout=True, keep_prob=keep_prob)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y, logits=logits)
 loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate=rate)
