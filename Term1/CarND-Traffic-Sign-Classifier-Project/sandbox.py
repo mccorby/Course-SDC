@@ -1,4 +1,5 @@
 import itertools
+import math
 
 
 def augment_dataset(dataset, labels):
@@ -25,3 +26,5 @@ print(list_of_list)
 
 merged = list(itertools.chain(*list_of_list))
 print(merged)
+
+print(math.ceil(43 / 4))

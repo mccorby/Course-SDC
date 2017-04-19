@@ -9,7 +9,8 @@ import tensorflow as tf
 
 from sklearn.utils import shuffle
 
-from data_augmenter import augment_dataset
+import data_augmenter
+import data_explorer
 
 with open('signnames.csv') as sign_names_file:
     reader = csv.reader(sign_names_file)
@@ -30,10 +31,15 @@ X_train, y_train = train['features'], train['labels']
 X_valid, y_valid = valid['features'], valid['labels']
 X_test, y_test = test['features'], test['labels']
 
-
+# Data exploration and visualization
 n_classes = len(np.unique(y_train))
+messages = data_explorer.summary_data(X_train, X_valid, X_test, n_classes)
+[print(msg) for msg in messages]
+
+data_explorer.visualize_dataset(X_train, y_train, n_classes, sign_names)
 
 
+# Preprocessing
 def normalize(img):
     return ((img - 128.) / 128.).astype(np.float32)
 
@@ -71,7 +77,7 @@ print(X_train.shape)
 
 
 # Augment data
-data_augmented, labels_augmented = augment_dataset(X_train, y_train)
+data_augmented, labels_augmented = data_augmenter.augment_dataset(X_train, y_train)
 print('data_augmented size {}'.format(len(data_augmented)))
 data_augmented = np.array(data_augmented)[..., np.newaxis]
 labels_augmented = np.array(labels_augmented)
