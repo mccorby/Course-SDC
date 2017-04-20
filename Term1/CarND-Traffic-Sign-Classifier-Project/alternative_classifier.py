@@ -176,7 +176,7 @@ if PROCESS_TRAINING:
 # Test a Model on New Images
 predictions_img_filter = './unseen_images/*.png'
 
-
+# Load unseen images
 images_path = [file for file in glob.glob(predictions_img_filter)]
 original_images = []
 for image_path in images_path:
@@ -189,6 +189,7 @@ for image_path in images_path:
 processed_original_images = [preprocess(img) for img in original_images]
 processed_original_images = np.array(processed_original_images)[..., np.newaxis]
 
+# Run the predictor
 with tf.Session() as sess:
     if not PROCESS_TRAINING:
         saver.restore(sess, SAVE_FILENAME)
@@ -201,4 +202,36 @@ with tf.Session() as sess:
 [print('{} - {}'.format(pred, sign_names[pred])) for pred in predictions]
 data_explorer.show_predictions(original_images, sign_names, predictions)
 
+# Calculate the accuracy for the unseen images
+# Output Top 5 Softmax Probabilities For Each Image
+TOP_K = 5
+saver = tf.train.Saver()
+with tf.Session() as sess:
+    if not PROCESS_TRAINING:
+        saver.restore(sess, SAVE_FILENAME)
+    predictions = sess.run(tf.nn.softmax(logits), feed_dict={x: processed_original_images, keep_prob: 1.0})
+    top_k = sess.run(tf.nn.top_k(predictions, TOP_K))
 
+
+data_explorer.show_images_top_predictions(original_images, sign_names, top_k)
+
+
+# def output_feature_map(sess, img, tf_activation, activation_min=-1, activation_max=-1, plt_num=1):
+#     activation = tf_activation.eval(session=sess, feed_dict={x: img})
+#
+#     data_explorer.show_feature_maps(activation, activation_min, activation_max, plt_num)
+#
+#
+# tf.reset_default_graph()
+# with tf.variable_scope('conv1', reuse=True):
+#     layer1 = tf.Variable(tf.truncated_normal(shape=(8, 8, 1, 20), mean=0., stddev=0.1), name='weights')
+#
+# with tf.variable_scope('conv2'):
+#     layer2 = tf.Variable(tf.truncated_normal(shape=(5, 5, 20, 16), mean=0., stddev=0.1), name='weights')
+#
+# saver = tf.train.Saver()
+# with tf.Session() as sess:
+#     if not PROCESS_TRAINING:
+#         saver.restore(sess, SAVE_FILENAME)
+#     output_feature_map(sess, [original_images[0]], layer1)
+#     output_feature_map(sess, [original_images[0]], layer2)
