@@ -191,8 +191,7 @@ processed_original_images = np.array(processed_original_images)[..., np.newaxis]
 
 # Run the predictor
 with tf.Session() as sess:
-    if not PROCESS_TRAINING:
-        saver.restore(sess, SAVE_FILENAME)
+    saver.restore(sess, SAVE_FILENAME)
     print("Model restored")
     # Feed image into feed_dict
     predictor = tf.argmax(logits, 1)
@@ -205,10 +204,8 @@ data_explorer.show_predictions(original_images, sign_names, predictions)
 # Calculate the accuracy for the unseen images
 # Output Top 5 Softmax Probabilities For Each Image
 TOP_K = 5
-saver = tf.train.Saver()
 with tf.Session() as sess:
-    if not PROCESS_TRAINING:
-        saver.restore(sess, SAVE_FILENAME)
+    saver.restore(sess, SAVE_FILENAME)
     predictions = sess.run(tf.nn.softmax(logits), feed_dict={x: processed_original_images, keep_prob: 1.0})
     top_k = sess.run(tf.nn.top_k(predictions, TOP_K))
 
