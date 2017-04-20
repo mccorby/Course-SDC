@@ -38,6 +38,7 @@ def show_preprocessed_images(original, grayscale, *imgs):
     :return: 
     """
     plt.figure(figsize=(16, 16))
+    plt.title('Preprocessed Images')
     columns = len(imgs) + 2
     plt.subplot(1, columns, 1)
     plt.imshow(original)
@@ -57,16 +58,30 @@ def show_histogram(labels, number_classes):
     :param number_classes: 
     :return: 
     """
+    plt.title('Samples per class')
     plt.hist(labels, number_classes)
     plt.show()
 
 
-def show_images(images, cmap='gray'):
+def show_images(images, title, cmap='gray'):
     columns = len(images)
-    plt.figure(figsize=(12, 12))
+    plt.figure(figsize=(12, 8))
+    plt.title(title)
     for i in range(0, columns):
         plt.subplot(1, columns, i + 1)
         plt.imshow(images[i], cmap=cmap)
         plt.axis('off')
     plt.show()
 
+
+def show_predictions(images, sign_names, predictions):
+    columns = 4
+    rows = math.ceil(len(images) / columns)
+    plt.figure(figsize=(12, 8))
+    plt.title('Predictions')
+    for i in range(len(images)):
+        plt.subplot(rows, columns, i + 1)
+        plt.imshow(images[i])
+        plt.title(sign_names[predictions[i]])
+        plt.axis('off')
+    plt.show()

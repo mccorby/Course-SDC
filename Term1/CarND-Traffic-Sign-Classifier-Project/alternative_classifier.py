@@ -1,4 +1,5 @@
 import csv
+import glob
 import pickle
 import os
 import numpy as np
@@ -13,15 +14,20 @@ from sklearn.utils import shuffle
 import data_augmenter
 import data_explorer
 
+SAVE_FILENAME = './alternative'
+DATA_DIR = './traffic-signs-data/'
+PROCESS_TRAINING = False
+
+
 with open('signnames.csv') as sign_names_file:
     reader = csv.reader(sign_names_file)
     next(reader, None)
     sign_names = {int(row[0]): row[1] for row in reader}
 
-data_dir = './traffic-signs-data/'
-training_file = os.path.join(data_dir, 'train.p')
-validation_file = os.path.join(data_dir, 'valid.p')
-testing_file = os.path.join(data_dir, 'test.p')
+
+training_file = os.path.join(DATA_DIR, 'train.p')
+validation_file = os.path.join(DATA_DIR, 'valid.p')
+testing_file = os.path.join(DATA_DIR, 'test.p')
 with open(training_file, mode='rb') as f:
     train = pickle.load(f)
 with open(validation_file, mode='rb') as f:
@@ -89,7 +95,7 @@ print(X_train.shape)
 
 # Augment data
 random_augmented = data_augmenter.augment_image(random_img)
-data_explorer.show_images(random_augmented)
+data_explorer.show_images(random_augmented, title='Augmented Images')
 
 data_augmented, labels_augmented = data_augmenter.augment_dataset(X_train, y_train)
 print('data_augmented size {}'.format(len(data_augmented)))
@@ -140,30 +146,59 @@ BATCH_SIZE = 128
 # Train the model
 # Calculate and report the accuracy on the training and validation set.
 
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    num_examples = len(X_train)
+if PROCESS_TRAINING:
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        num_examples = len(X_train)
 
-    print("Training...")
-    print()
-    for i in range(EPOCHS):
-        X_train, y_train = shuffle(X_train, y_train)
-        for offset in range(0, num_examples, BATCH_SIZE):
-            end = offset + BATCH_SIZE
-            batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
-
-        train_accuracy = evaluate(X_train, y_train)
-        validation_accuracy = evaluate(X_valid, y_valid)
-        print("EPOCH {} ...".format(i + 1))
-        print("Train Accuracy = {:.3f}".format(train_accuracy))
-        print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+        print("Training...")
         print()
+        for i in range(EPOCHS):
+            X_train, y_train = shuffle(X_train, y_train)
+            for offset in range(0, num_examples, BATCH_SIZE):
+                end = offset + BATCH_SIZE
+                batch_x, batch_y = X_train[offset:end], y_train[offset:end]
+                sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
 
-    test_accuracy = evaluate(X_test, y_test)
-    print("Test Accuracy = {:.3f}".format(test_accuracy))
-    saver.save(sess, './alternative')
-    print("Model saved")
+            train_accuracy = evaluate(X_train, y_train)
+            validation_accuracy = evaluate(X_valid, y_valid)
+            print("EPOCH {} ...".format(i + 1))
+            print("Train Accuracy = {:.3f}".format(train_accuracy))
+            print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+            print()
 
+        test_accuracy = evaluate(X_test, y_test)
+        print("Test Accuracy = {:.3f}".format(test_accuracy))
+        saver.save(sess, SAVE_FILENAME)
+        print("Model saved")
+
+
+# Test a Model on New Images
+predictions_img_filter = './unseen_images/*.png'
+
+
+images_path = [file for file in glob.glob(predictions_img_filter)]
+original_images = []
+for image_path in images_path:
+    print(image_path)
+    image = cv2.imread(image_path)
+    # Images coming in BGR color format
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    original_images.append(image)
+
+processed_original_images = [preprocess(img) for img in original_images]
+processed_original_images = np.array(processed_original_images)[..., np.newaxis]
+
+with tf.Session() as sess:
+    if not PROCESS_TRAINING:
+        saver.restore(sess, SAVE_FILENAME)
+    print("Model restored")
+    # Feed image into feed_dict
+    predictor = tf.argmax(logits, 1)
+    predictions = sess.run(predictor, feed_dict={x: processed_original_images, keep_prob: 1.0})
+
+
+[print('{} - {}'.format(pred, sign_names[pred])) for pred in predictions]
+data_explorer.show_predictions(original_images, sign_names, predictions)
 
 
