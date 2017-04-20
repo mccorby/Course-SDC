@@ -35,3 +35,6 @@ def show_multiple(*args):
     print(args[0])
 
 show_multiple(5, 4, 3, 2)
+
+print('Printing slicing')
+[print(x) for x in l[:3]]

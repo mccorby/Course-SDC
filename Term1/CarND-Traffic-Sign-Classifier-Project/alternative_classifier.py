@@ -209,7 +209,7 @@ with tf.Session() as sess:
     predictions = sess.run(tf.nn.softmax(logits), feed_dict={x: processed_original_images, keep_prob: 1.0})
     top_k = sess.run(tf.nn.top_k(predictions, TOP_K))
 
-
+[print(prob) for prob in top_k[:5]]
 data_explorer.show_images_top_predictions(original_images, sign_names, top_k)
 
 

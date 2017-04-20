@@ -18,11 +18,18 @@ The goals / steps of this project are the following:
 [image1]: ./examples/visualization.jpg "Visualization"
 [image2]: ./examples/grayscale.jpg "Grayscaling"
 [image3]: ./examples/random_noise.jpg "Random Noise"
-[image4]: ./examples/placeholder.png "Traffic Sign 1"
-[image5]: ./examples/placeholder.png "Traffic Sign 2"
-[image6]: ./examples/placeholder.png "Traffic Sign 3"
-[image7]: ./examples/placeholder.png "Traffic Sign 4"
-[image8]: ./examples/placeholder.png "Traffic Sign 5"
+[image4]: ./unseen_images/front_right.png "Traffic Sign 1"
+[image5]: ./unseen_images/no_entry.png "Traffic Sign 2"
+[image6]: ./unseen_images/no_entry_bricks.png "Traffic Sign 3"
+[image7]: ./unseen_images/no_passing.png "Traffic Sign 4"
+[image8]: ./unseen_images/no_vehicles.png "Traffic Sign 5"
+[image9]: ./unseen_images/roundabout_posters.png "Traffic Sign 6"
+[image10]: ./unseen_images/speed_limit_40.png "Traffic Sign 7"
+[image11]: ./unseen_images/speed_limit_50.png "Traffic Sign 8"
+[image12]: ./unseen_images/stop.png "Traffic Sign 9"
+[image13]: ./unseen_images/working.png "Traffic Sign 10"
+[image14]: ./unseen_images/yellow_diamond.png "Traffic Sign 11"
+[image15]: ./unseen_images/yield.png "Traffic Sign 12"
 
 [support_img1]: ./supporting_images/samples_count.png "Samples per class"
 [support_img2]: ./supporting_images/grayscale.png "Grayscaling"
@@ -161,12 +168,15 @@ From this point, I started modifying the network:
 
 ####1. Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify.
 
-Here are five German traffic signs that I found on the web:
+Here are some traffic signs that I found on the web:
 
 ![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
+![alt text][image7] ![alt text][image8] ![alt text][image9]
+![alt text][image10] ![alt text][image11] ![alt text][image12]
+![alt text][image13] ![alt text][image14] ![alt text][image15]
 
-Some of the images are difficult to predict because they are either not present in the original dataset (TODO) or because they look too similar to other signs
+Some of the images are difficult to predict because they are either not present in the original dataset
+ or because they look too similar to other signs or are too distorted for the model to know them.
 
 
 ####2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
@@ -175,14 +185,21 @@ Here are the results of the prediction:
 
 | Image			        |     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| Stop Sign      		| Stop sign   									| 
-| U-turn     			| U-turn 										|
+| Go straight or right  | Go straight or right							| 
+| No entry     			| No entry 										|
+| No entry (diff bg)	| No entry 										|
 | Yield					| Yield											|
-| 100 km/h	      		| Bumpy Road					 				|
-| Slippery Road			| Slippery Road      							|
+| No passing      		| No passing					 				|
+| No entry      		| No entry  					 				|
+| Roundabout mandatory  | Roundabout mandatory                          |
+| Road work             | Road work                                     |
+| Priority road         | Priority road                                 |
+| Stop      			| Speed limit (60 km/h)							|
+| Speed limit (40 km/h)	| Turn right ahead  							|
+| Speed limit (50 km/h)	| Turn right ahead  							|
 
 
-The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80%. This compares favorably to the accuracy on the test set of ...
+The model was able to correctly guess 9 of the 12 traffic signs, which gives an accuracy of 75%.
 
 ####3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
 
@@ -190,18 +207,37 @@ The next image shows the top-5 probabilities for each image
 
 
 
-For the first image, the model is relatively sure that this is a stop sign (probability of 0.6), and the image does contain a stop sign. The top five soft max probabilities were
+For the first image, the model is sure that this is a "Go straight or right" sign
+(probability of 0.98). The top five soft max probabilities were
 
 | Probability         	|     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| .60         			| Stop sign   									| 
-| .20     				| U-turn 										|
-| .05					| Yield											|
-| .04	      			| Bumpy Road					 				|
-| .01				    | Slippery Road      							|
+| .98         			| Go straight or right							| 
+| .01     				| Keep right									|
+| ~ .00					| Turn left ahead								|
+| ~ .00	      			| End of all speed and passing limits			|
+| ~ .00				    | Priority road      							|
 
 
-For the second image ... 
+For the second and thirs images it had no doubts and predicted a "No entry" with a 100% of accuracy
+| Probability         	|     Prediction	        					| 
+|:---------------------:|:---------------------------------------------:| 
+| 1.00         			| No entry          							| 
+
+Fourth image. It predicted with a 100% that it was a "No passing" sign
+| Probability         	|     Prediction	        					| 
+|:---------------------:|:---------------------------------------------:| 
+| 1.00         			| No passing          							|
+ 
+ Fifth image: It was a "No entry" image. It predicted it with a 82.5% of probability.
+ | Probability         	|     Prediction	        					| 
+ |:--------------------:|:---------------------------------------------:| 
+ | 0.825         		| No entry          							|
+ | 0.1           		| End of speed limit (80 km/h)					|
+ | 0.048           		| End of all speed and passing limits			|
+ | 0.006           		| Speed limit (20 km/h)             			|
+ | 0.002           		| Dangerous curve to the right         			|
+ 
 
 ### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
 ####1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
