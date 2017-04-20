@@ -220,16 +220,19 @@ For the first image, the model is sure that this is a "Go straight or right" sig
 
 
 For the second and thirs images it had no doubts and predicted a "No entry" with a 100% of accuracy
+
 | Probability         	|     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | 1.00         			| No entry          							| 
 
 Fourth image. It predicted with a 100% that it was a "No passing" sign
+
 | Probability         	|     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | 1.00         			| No passing          							|
  
  Fifth image: It was a "No entry" image. It predicted it with a 82.5% of probability.
+ 
  | Probability         	|     Prediction	        					| 
  |:--------------------:|:---------------------------------------------:| 
  | 0.825         		| No entry          							|
