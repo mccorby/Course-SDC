@@ -72,9 +72,7 @@ As a first step, I decided to convert the images to grayscale because it is demo
 As a last step, I normalized the image data because data should be in a similar range when processed by the network
 This  helps avoiding the gradients running wild
 
-I decided to generate additional data because:
- * The original dataset is skewed with some classes being underrepresented. This would make the predictions always favoured those classes with more samples
- * I then added more additional data to increase dataset size
+I decided to generate additional data because having more samples helps the model to be more accurate. Note that by using regularization techniques overfitting will be reduced
 
 To add more data to the the data set, I used the following techniques:
  * Rotation. I applied a random rotation of less than 10 degrees
@@ -86,12 +84,12 @@ Here is an example of an original image and its augmented versions:
 
 ![alt text][support_img2] ![alt text][support_img3] ![alt text][support_img4]
 
- The final dataset used to train has around 140k samples
+ The final dataset used to train has around 100k samples
 
 
 #### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
 
-The model I chose was a LeNet architecture. 
+The model I chose was a LeNet architecture (as proposed in the previous lesson) with variations on the feature kernels and depths. 
 Though I tried adding dropout I could not see much differences in the performance yet the execution time was sensible increased
 
 Note that the input is 32x32x1 because the network works with grayscale images. Here is where we can see now the convenience of using this transformation to the image
@@ -101,13 +99,13 @@ My final model consisted of the following layers:
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | Input         		| 32x32x1 grayscale image   					| 
-| Convolution 3x3     	| 1x1 stride, valid padding, outputs 28x28x6 	|
+| Convolution 8x8    	| 1x1 stride, valid padding, outputs 25x25x20 	|
 | RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 14x14x6   				|
-| Convolution 3x3	    | 1x1 stride, valid padding, outputs 10x10x16   |
+| Max pooling	      	| 2x2 stride,  outputs 12x12x20   				|
+| Convolution 5x5	    | 1x1 stride, valid padding, outputs 8x8x16     |
 | RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 5x5x16   				|
-| Fully connected		| 400x120 with RELU activation                  |
+| Max pooling	      	| 2x2 stride,  outputs 4x4x16   				|
+| Fully connected		| 256x120 with RELU activation                  |
 | Fully connected		| 120x84 with RELU activation                   |
 | Fully connected       | 84x43        									|
  
@@ -121,14 +119,14 @@ Hyper-parameters:
  * Epochs: 10
  * Batch size: 128
  * Learning rate: 0.001
- * When using dropout, the probability of keeping a connection was set to 0.7
+ * When using dropout, the probability of keeping a connection was set to 0.5
 
 ####4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
 
 My final model results were:
-* training set accuracy of TODO
-* validation set accuracy of 0.988 
-* test set accuracy of 0.897
+* training set accuracy of 0.993
+* validation set accuracy of 0.968 
+* test set accuracy of 0.940
 
 If an iterative approach was chosen:
 * What was the first architecture that was tried and why was it chosen?
@@ -138,14 +136,25 @@ If an iterative approach was chosen:
 * What are some of the important design choices and why were they chosen? For example, why might a convolution layer work well with this problem? How might a dropout layer help with creating a successful model?
 
 If a well known architecture was chosen:
-* What architecture was chosen?
-* Why did you believe it would be relevant to the traffic sign application?
+* What architecture was chosen? I started with LeNet architecture, a well-know solution for imaging processing.
+LeNet is based on convolutional layers. The initial architecture consisted of two of these layers plus two full connected layers
+* Why did you believe it would be relevant to the traffic sign application? As said, convolutional networks are a good fit for image processing.
 * How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
+The performance of the model is good though it can be improved. Training and validation are quite high with training being superior to that of a human being.
+More epochs and more data would increase the model's performance
 
-I decided to go for a LeNet architecture and play with the dataset before attempting to improve LeCunn's network.
-Without further changes, LeNet was giving a performance (validation set) of around 0.90. Though this was below the mark for the project, it was a good start
-After augmenting and shuffling the data (and with the only variation to the network being the input tensor shape), the performace raised to 0.967 for the validation test and 0.878 for the test set
-These are good results though the test accuracy is still low. This could be because of overfitting problems. I added dropout to some of the layers raising the test accuracy to 0.90. It seems evident from these results that changes in the architecture are required if we want to improve this data.
+
+Without further changes, LeNet was giving a performance of 0.993 for the training set. The validation and test accuracies were giving lower values (0.911 and 0.894)
+From this point, I started modifying the network:
+* Model #2: I first wanted to see if by regularizing the network the test accuracy would improve. This is because the previous value was too low
+  * Dropout increased the test accuracy to 0.911
+* Model #3: I decided to modify the convolutional layers to provide more features. I was expecting to increase the accuracy in all the sets
+  * The result was an increase of accuracy in training, validation and test. For this last one, the value was at 0.931, this is, above the minimum requirement for this assignment!
+* Model #4: By adding more data I was expecting to keep increasing the performance of the model. I augmented the dataset as previously discussed obtaining the following results:
+  * Training: 0.993
+  * Validation: 0.968
+  * Test: 0.940
+ 
 
 
 ###Test a Model on New Images
