@@ -73,7 +73,7 @@ hist_random_img = histogram(gray_random_img)
 data_explorer.show_preprocessed_images(random_img, gray_random_img, hist_random_img)
 
 # Show the number of samples per class
-data_explorer.show_histogram(y_train, n_classes)
+data_explorer.show_histogram([y_train, y_test], n_classes)
 
 # Preprocess data
 X_train = [preprocess(x) for x in X_train]

@@ -60,7 +60,8 @@ def show_histogram(labels, number_classes):
     :return: 
     """
     plt.title('Samples per class')
-    plt.hist(labels, number_classes)
+    for label_set in labels:
+        plt.hist(label_set, number_classes)
     plt.show()
 
 
