@@ -4,7 +4,6 @@ import tensorflow as tf
 # TODO: import Keras layers you need here
 from keras.engine import Input, Model
 from keras.layers import Flatten, Dense
-from keras.models import Sequential
 import numpy as np
 
 flags = tf.app.flags
@@ -13,6 +12,8 @@ FLAGS = flags.FLAGS
 # command line flags
 flags.DEFINE_string('training_file', '', "Bottleneck features training file (.p)")
 flags.DEFINE_string('validation_file', '', "Bottleneck features validation file (.p)")
+flags.DEFINE_integer('epochs', 50, 'Number of epochs')
+flags.DEFINE_integer('batch_size', 128, 'Batch size')
 
 
 def load_bottleneck_data(training_file, validation_file):
@@ -62,7 +63,7 @@ def main(_):
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # TODO: train your model here
-    model.fit(X_train, y_train, epochs=10, batch_size=128, validation_data=(X_val, y_val), shuffle=True)
+    model.fit(X_train, y_train, epochs=FLAGS.epochs, batch_size=FLAGS.batch_size, validation_data=(X_val, y_val), shuffle=True)
 
 
 # parses flags and calls the `main` function above
