@@ -147,7 +147,3 @@ The ideal number of epochs was 10 as evidenced by the fact that the error loss w
 
 I used an adam optimizer so that manually training the learning rate wasn't necessary.
 
-
-### Conclusion
-I was waiting for this assignment as it looked exciting. However I had to spend a lot of time just getting the right cropping and augmentation of the data. The models were fine from a very early stage though.
-
