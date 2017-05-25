@@ -46,11 +46,12 @@ class LaneFinderPipeline:
         if self.args.is_test:
             self.image_logger.save_image(warped, 'warped_image.png')
         ploty, left_fit, right_fit, left_fitx, right_fitx = self.get_line_fit(warped)
-        self.left_line.update(left_fit)
-        self.right_line.update(right_fit)
-        left_rad, right_rad = measure_curvature(ploty, self.args.is_test)
-        result = self.draw_final_image(image, warped, undist, ploty, left_fitx, right_fitx, self.Minv, left_rad,
-                                       right_rad)
+        left_rad, right_rad = measure_curvature(warped, left_fitx, right_fitx, self.args.is_test)
+        self.left_line.update(left_fit, left_rad)
+        self.right_line.update(right_fit, right_rad)
+        result = self.draw_final_image(image, warped, undist, ploty, left_fitx, right_fitx, self.Minv,
+                                       self.left_line.best_curvature,
+                                       self.right_line.best_curvature)
         return result
 
     def undistort(self, image):
@@ -205,7 +206,7 @@ class Line:
         # polynomial coefficients for the most recent fit
         self.current_fit = deque(maxlen=iterations)
         # radius of curvature of the line in some units
-        self.radius_of_curvature = None
+        self.radius_of_curvature = deque()
         # distance in meters of vehicle center from the line
         self.line_base_pos = None
         # difference in fit coefficients between last and new fits
@@ -215,7 +216,7 @@ class Line:
         # y values for detected line pixels
         self.ally = None
 
-    def update(self, fit):
+    def update(self, fit, curvature):
         """
         Determine if the new fit is good enough and decide whether this line is a good detection or not
         :param fit: the new fit for the line
@@ -224,11 +225,11 @@ class Line:
             self.detected = False
         else:
             if self.best_fit is None:
-                self._accept_fit(fit)
+                self._accept_fit(fit, curvature)
             else:
                 # We have a previous best fit. Compare it with the incoming one
                 if self._sanity_check(fit):
-                    self._accept_fit(fit)
+                    self._accept_fit(fit, curvature)
                 else:
                     self.detected = False
 
@@ -242,7 +243,7 @@ class Line:
             return False
         return True
 
-    def _accept_fit(self, fit):
+    def _accept_fit(self, fit, curvature):
         """
         Accept the incoming fit for the line and update the values for the best fit by averaging the contents of the
         deque
@@ -251,6 +252,9 @@ class Line:
         self.detected = True
         self.current_fit.append(fit)
         self.best_fit = np.average(self.current_fit, axis=0)
+        if 10000 > curvature > 100:
+            self.radius_of_curvature.append(curvature)
+            self.best_curvature = np.average(self.radius_of_curvature)
 
 
 if __name__ == '__main__':
