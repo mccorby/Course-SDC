@@ -1,11 +1,7 @@
 import cv2
 
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
 import numpy as np
 from skimage.feature import hog
-
-from data_preprocessing import get_list_of_images
 
 
 def color_hist(img, nbins=32, bins_range=None):
@@ -48,23 +44,6 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, featu
         return result[0], result[1]
     else:
         return result[0]
-
-
-# def bin_spatial(feature_image, size=(32, 32), ravel_features=True):
-#     """
-#     Compute color histogram features
-#     :param ravel_features:
-#     :param feature_image:
-#     :param size:
-#     :return:
-#     """
-#     features = cv2.resize(feature_image, size, interpolation=cv2.INTER_NEAREST)
-#
-#     if ravel_features:
-#         # Use ravel() to create the feature vector
-#         features = features.ravel()
-#     # Return the feature vector
-#     return features
 
 
 def convert_to_colorspace(img, color_space='RGB'):
@@ -118,78 +97,3 @@ def extract_features(img, color_space='RGB', color_params=None, spatial_params=N
                                             cell_per_block=hog_params['cell_per_block'], vis=False, feature_vec=False)
         hog_features = np.ravel(hog_features)
     return np.hstack((spatial_features, hist_features, hog_features))
-
-
-if __name__ == '__main__':
-    # image_filename = './test_images/test1.jpg'
-    # image = cv2.imread(image_filename)
-    # feature_image = convert_to_colorspace(image)
-    # rh, gh, bh, bincen, feature_vec = color_hist(feature_image, nbins=32, bins_range=(0, 256))
-    # show_histogram(rh, gh, bh, bincen)
-
-    # Read a color image
-    # img = cv2.imread(image_filename)
-    # img_small_RGB = bin_spatial(img, ravel_features=False)  # OpenCV uses BGR, matplotlib likes RGB
-    # img_small_rgb = img_small_RGB / 255.  # scaled to [0, 1], only for plotting
-    #
-    # color_spaces = ('RGB', 'HSV', 'LUV', 'HLS', 'YUV', 'YCrCb')
-    # for color_space in color_spaces:
-    #     # Convert subsampled image to desired color space(s)
-    #     feature_image = convert_to_colorspace(img, color_space)
-    #     img_small_color = bin_spatial(feature_image, ravel_features=False)
-    #
-    #     # Plot and show
-    #     plot3d(img_small_color, img_small_rgb)
-    #     plt.title(color_space)
-    #     plt.show()
-
-    # Generate a random index to look at a car image
-    cars = get_list_of_images('./train_images/vehicles')
-    noncars = get_list_of_images('./train_images/non-vehicles')
-    ind = np.random.randint(0, len(cars))
-    # Read in the image
-    image = mpimg.imread(cars[ind])
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    # Define HOG parameters
-    orient = 9
-    pix_per_cell = 8
-    cell_per_block = 2
-    # Call our function with vis=True to see an image output
-    features, hog_image = get_hog_features(gray, orient,
-                                           pix_per_cell, cell_per_block,
-                                           vis=True, feature_vec=False)
-
-    # Plot the examples
-    # fig = plt.figure()
-    # plt.subplot(121)
-    # plt.imshow(image, cmap='gray')
-    # plt.title('Example Car Image')
-    # plt.subplot(122)
-    # plt.imshow(hog_image, cmap='gray')
-    # plt.title('HOG Visualization')
-    # plt.show()
-
-    # Test Extract Features
-    # NOTE TODO Take care with the StandarScaler. It is using both cars and not-cars to compute
-    # IF using only one of the sets (cars, for instance) the non-normalize graph is different
-    # After testing the code provided in the lessons, this is all correct
-    # Using a single image to test how the feature extract works with the scaler yields similar results
-
-    X, y, scaler = extract_features_dataset(cars, noncars)
-    scaled_X = scaler.transform(X)
-    # Apply the scaler to X
-    # Plot an example of raw and scaled features
-    ind = 3
-    image = mpimg.imread(cars[ind])
-    fig = plt.figure(figsize=(12, 4))
-    plt.subplot(131)
-    plt.imshow(image)
-    plt.title('Original Image')
-    plt.subplot(132)
-    plt.plot(X[ind])
-    plt.title('Raw Features')
-    plt.subplot(133)
-    plt.plot(scaled_X[ind])
-    plt.title('Normalized Features')
-    fig.tight_layout()
-    plt.show()

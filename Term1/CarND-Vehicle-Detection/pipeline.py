@@ -1,16 +1,12 @@
 import cv2
 
+import numpy as np
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from scipy.ndimage.measurements import label
 from sklearn.externals import joblib
 
 from feature_extraction import bin_spatial, color_hist, get_hog_features, convert_to_colorspace
-from heatmap import update_heat, Heatmap, draw_labeled_bboxes
-from sliding_window import search_windows, draw_boxes, slide_window
-import matplotlib.image as mpimg
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage import img_as_ubyte
+from heatmap import draw_labeled_bboxes, add_heat, apply_threshold
 
 
 # Define a single function that can extract features using hog sub-sampling and make predictions
@@ -86,53 +82,29 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, hog_params, spatial_para
 
 
 def pipeline(frame):
+    global heatmap_avg
     heat = np.zeros_like(frame[:, :, 0]).astype(np.float)
-    bboxes = find_cars(frame, ystart, ystop, scale, model, scaler, hog_params, spatial_params, color_params)
-    draw_img = np.copy(frame)
-    # for box in bboxes:
-    #     cv2.rectangle(draw_img, box[0], box[1], (0, 0, 255), 6)
-    heatmap = update_heat(draw_img, heat, bboxes)
-    result = cv2.addWeighted(draw_img, 1, heatmap, 0.4, 0)
-    return result
-
-
-def pipeline_copy(frame):
     bboxes = []
-    current_frame_heatmap = Heatmap()
     for i in range(len(windows_params['scales'])):
-        # xstart = windows_params['x_limits'][i][0]
-        # xstop = windows_params['x_limits'][i][1]
         ystart = windows_params['y_limits'][i][0]
         ystop = windows_params['y_limits'][i][1]
         scale = windows_params['scales'][i]
         current_bboxes = find_cars(frame, ystart, ystop, scale, model, scaler, hog_params, spatial_params, color_params)
         bboxes.extend(current_bboxes)
 
-    current_frame_heatmap.add_heat(bboxes)
-    heatmap.update(current_frame_heatmap)
-    heatmap.apply_threshold(5)
-    labels = label(heatmap.heatmap)
+    heat = add_heat(heat, bboxes)
+    current_heat = heatmap_avg + heat
+    heatmap_avg = heat
+    current_heat = apply_threshold(current_heat, 10)  # Apply threshold to help remove false positives
+    # Visualize the heatmap when displaying
+    heatmap = np.clip(current_heat, 0, 255)
+    # Find final boxes from heatmap using label function
+    labels = label(heatmap)
     draw_img = draw_labeled_bboxes(np.copy(frame), labels)
-    # im_heatmap = heatmap.get_rgb_image()
-    # new_hm = np.zeros_like(draw_img)
-    # new_hm[:,:,0] = im_heatmap
-    # new_hm[:,:,1] = im_heatmap
-    # new_hm[:,:,2] = im_heatmap
-    # print(new_hm.dtype)
-    # result = cv2.addWeighted(draw_img, 1, new_hm, 0.4, 0)
     return draw_img
 
 
 if __name__ == '__main__':
-    # image = mpimg.imread('./test_images/test1.jpg')
-    # Use this if working with JPG.
-    # If you extracted training data from .png images (scaled 0 to 1 by mpimg) and the
-    # image you are searching is a .jpg (scaled 0 to 255)
-    # draw_image = np.copy(image)
-    # image = image.astype(np.float32) / 255
-
-    y_start_stop = [375, 700]  # Min and max in y to search in slide_window() 375
-    window_sizes = [(192, 192), (96, 96), (48, 48)]
     # TODO Check if model exists
     model = joblib.load('./model.pkl')
     scaler = joblib.load('./scaler.pkl')
@@ -142,35 +114,11 @@ if __name__ == '__main__':
     hog_params = {'orient': 9, 'pix_per_cell': 8, 'cell_per_block': 2, 'channel': 'ALL'}
     xy_overlap = (0.5, 0.5)
 
-    ystart = 400
-    ystop = 656
-    scale = 1.25
-
-    # for window_size in window_sizes:
-    #     windows = slide_window(image, x_start_stop=[None, None], y_start_stop=y_start_stop,
-    #                            xy_window=window_size, xy_overlap=xy_overlap)
-    #
-    #     hot_windows = search_windows(image, windows, model, scaler, color_space,
-    #                                  color_params, spatial_params, hog_params)
-    #
-    #     draw_image = draw_boxes(draw_image, hot_windows, color=(0, 0, 255), thick=6)
-    #
-    # plt.title('Overlap {}.{}'.format(xy_overlap[0], xy_overlap[1]))
-    # plt.imshow(draw_image)
-    # plt.show()
-
-    # bboxes = find_cars(image, ystart, ystop, scale, model, scaler, hog_params, spatial_params, color_params)
-    # draw_img = np.copy(image)
-    # for box in bboxes:
-    #     cv2.rectangle(draw_img, box[0], box[1], (0, 0, 255), 6)
-    #
-    # plt.imshow(draw_img)
-    # plt.show()
-    heatmap = Heatmap()
     windows_params = {'sizes': [(64, 64), (96, 96), (128, 128)],
                       'y_limits': [[400, 500], [380, 600], [500, 650]],
                       'x_limits': [[0, 1280], [0, 1280], [0, 1280]],
                       'scales': [1.25, 1.5]}
+    heatmap_avg = np.zeros((720, 1280))  # Heatmap average
     clip2 = VideoFileClip('./project_video.mp4')
-    vid_clip = clip2.fl_image(pipeline_copy)
+    vid_clip = clip2.fl_image(pipeline)
     vid_clip.write_videofile('./test_video_output.mp4', audio=False)

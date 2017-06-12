@@ -11,7 +11,7 @@ from sklearn import svm, model_selection
 from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC, LinearSVC
+from sklearn.svm import LinearSVC
 
 from data_preprocessing import get_list_of_images
 from feature_extraction import extract_features
@@ -82,6 +82,7 @@ def extract_features_dataset(car_filenames, noncars_filenames):
 
     labels = np.hstack((np.ones(len(car_features)), np.zeros(len(noncar_features))))
     return X, labels, X_scaler
+
 
 def predict(model, X_test, y_test):
     # Check the prediction time for a single sample
